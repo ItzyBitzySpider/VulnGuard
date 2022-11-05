@@ -5,6 +5,11 @@ const extension = require("./extension");
 const SEMGREP_BINARY = "semgrep";
 
 async function findSemgrep(ctx) {
+  if (process.platform === "win32") {
+    console.log("Windows Detected - Semgrep Disabled");
+    return undefined;
+  }
+
   const server = which.sync(SEMGREP_BINARY, { nothrow: true });
   if (!server) {
     const brew = which.sync("brew", { nothrow: true });
