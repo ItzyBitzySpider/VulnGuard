@@ -1,13 +1,18 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 const vscode = require("vscode");
-const highlight = require("./diagnostics");
+const diagnostics = require("./diagnostics");
+const semgrep = require("./semgrep");
 
 /**
  * @param {vscode.ExtensionContext} context
  */
-function activate(context) {
+async function activate(context) {
   console.log("VulnGuard has started and is running!");
+
+  const server = await semgrep.findSemgrep(context);
+
+  console.log("Found SemGrep! Hooray!");
 
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with  registerCommand
@@ -32,13 +37,13 @@ function activate(context) {
   });
   //onEdit
   vscode.workspace.onDidChangeTextDocument(
-    (event) => highlight.handleActiveEditorTextChange(event, vulnDiagnostics),
+    (event) => diagnostics.handleActiveEditorTextChange(event, vulnDiagnostics),
     null,
     context.subscriptions
   );
   //Change tab
   vscode.window.onDidChangeActiveTextEditor(
-    (editor) => highlight.handleChangeActiveEditor(editor, vulnDiagnostics),
+    (editor) => diagnostics.handleChangeActiveEditor(editor, vulnDiagnostics),
     null,
     context.subscriptions
   );

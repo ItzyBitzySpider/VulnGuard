@@ -10,14 +10,16 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:vulnguard.helloWorld"
+    "onStartupFinished"
   ],
-  "main": "./extension.js",
+  "main": "./src/extension.js",
   "contributes": {
-    "commands": [{
-      "command": "vulnguard.helloWorld",
-      "title": "Hello World"
-    }]
+    "commands": [
+      {
+        "command": "vulnguard.helloWorld",
+        "title": "Hello World"
+      }
+    ]
   },
   "scripts": {
     "lint": "eslint .",
@@ -25,14 +27,17 @@
     "test": "node ./test/runTest.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.73.0",
     "@types/glob": "^8.0.0",
     "@types/mocha": "^10.0.0",
     "@types/node": "16.x",
+    "@types/vscode": "^1.73.0",
+    "@vscode/test-electron": "^2.2.0",
     "eslint": "^8.26.0",
     "glob": "^8.0.3",
     "mocha": "^10.1.0",
-    "typescript": "^4.8.4",
-    "@vscode/test-electron": "^2.2.0"
+    "typescript": "^4.8.4"
+  },
+  "dependencies": {
+    "which": "^3.0.0"
   }
 }
