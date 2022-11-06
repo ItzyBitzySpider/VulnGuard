@@ -19,7 +19,7 @@
     "commands": [
       {
         "command": "vulnguard.dashboard",
-        "title": "Show VulnGuard Dashboard"
+        "title": "VulnGuard: Show Dashboard"
       }
     ]
   },
