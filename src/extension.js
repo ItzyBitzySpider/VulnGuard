@@ -2,8 +2,11 @@
 // Import the module and reference it with the alias vscode in your code below
 const vscode = require("vscode");
 const diagnostics = require("./diagnostics");
-const settings = require("./settings");
 const semgrep = require("./semgrep");
+const { createWebview } = require("./webview");
+const { Feature, setFeatureContext } = require("./feature");
+
+const featureList = [];
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -13,29 +16,23 @@ async function activate(context) {
 
   const semgrepServer = await semgrep.findSemgrep(context);
 
-  // The command has been defined in the package.json file
-  // Now provide the implementation of the command with  registerCommand
-  // The commandId parameter must match the command field in package.json
-  let disposable = vscode.commands.registerCommand(
-    "vulnguard.helloWorld",
-    function () {
-      // The code you place here will be executed every time your command is executed
+  setFeatureContext(context);
 
-      // Display a message box to the user
-      vscode.window.showInformationMessage("Hello World from VulnGuard!");
-    }
-  );
-
-  console.log(settings.getFeatures(context));
+  featureList.push(new Feature("semgrep", "SemGrep", (filename) => {}));
+  featureList.push(new Feature("regex", "Regex", (filename) => {}));
 
   const vulnDiagnostics = vscode.languages.createDiagnosticCollection("vulns");
   const watcher = vscode.workspace.createFileSystemWatcher("**/*.js");
 
   //onSave active document
-  vscode.workspace.onDidSaveTextDocument((event) => {
-    if (event.uri.scheme !== "file") return;
-    console.log(event.uri);
-  });
+  vscode.workspace.onDidSaveTextDocument(
+    (event) => {
+      if (event.uri.scheme !== "file") return;
+      console.log(event.uri);
+    },
+    null,
+    context.subscriptions
+  );
   //onEdit
   vscode.workspace.onDidChangeTextDocument(
     (event) => diagnostics.handleActiveEditorTextChange(event, vulnDiagnostics),
@@ -66,7 +63,13 @@ async function activate(context) {
   // );
 
   context.subscriptions.push(
-    disposable,
+    vscode.commands.registerCommand("vulnguard.dashboard", function () {
+      // The code you place here will be executed every time your command is executed
+
+      // Display a message box to the user
+      vscode.window.showInformationMessage("Hello World from VulnGuard!");
+      createWebview(context);
+    }),
     //onSave
     watcher.onDidChange((uri) => {
       if (uri.scheme !== "file") return;
@@ -92,4 +95,5 @@ function deactivate() {}
 module.exports = {
   activate,
   deactivate,
+  featureList,
 };
