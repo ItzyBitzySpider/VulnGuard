@@ -2,6 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 const vscode = require("vscode");
 const diagnostics = require("./diagnostics");
+const settings = require("./settings");
 const semgrep = require("./semgrep");
 
 /**
@@ -10,9 +11,7 @@ const semgrep = require("./semgrep");
 async function activate(context) {
   console.log("VulnGuard has started and is running!");
 
-  const server = await semgrep.findSemgrep(context);
-
-  console.log("Found SemGrep! Hooray!");
+  const semgrepServer = await semgrep.findSemgrep(context);
 
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with  registerCommand
@@ -26,6 +25,8 @@ async function activate(context) {
       vscode.window.showInformationMessage("Hello World from VulnGuard!");
     }
   );
+
+  console.log(settings.getFeatures(context));
 
   const vulnDiagnostics = vscode.languages.createDiagnosticCollection("vulns");
   const watcher = vscode.workspace.createFileSystemWatcher("**/*.js");
@@ -47,7 +48,6 @@ async function activate(context) {
     null,
     context.subscriptions
   );
-
   // TODO handle config change
   // vscode.workspace.onDidChangeConfiguration(
   //   () => {
