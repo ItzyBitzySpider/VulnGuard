@@ -2,6 +2,7 @@
   "name": "vulnguard",
   "displayName": "VulnGuard",
   "description": "An extension to lint code for security vulnerabilities",
+  "publisher": "ItzyBitzySpider",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.73.0"
