@@ -64,7 +64,7 @@ function updateWebview(context) {
   <body style="padding: 10px">
     <div class="row">
       <div style="margin-right: 50px"><img src="${vulnguardLogo}" /></div>
-      <div class="col">
+      <div class="col" style="margin-right: 20px">
         <h1>VulnGuard</h1>
         <div class="row">
           <p>Version</p>
