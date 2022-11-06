@@ -1,4 +1,4 @@
 {
   "semgrep": true,
-  "rules": true
+  "regex": true
 }
