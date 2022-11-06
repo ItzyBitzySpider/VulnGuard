@@ -24,7 +24,7 @@ function updateDecoration(vulnDiagnostics) {
         end: endPosA,
       },
       message: "TEST MESSAGE",
-      source: "ex ex ex",
+      source: "VulnGuard",
     },
     {
       severity: vscode.DiagnosticSeverity.Information,
@@ -32,8 +32,8 @@ function updateDecoration(vulnDiagnostics) {
         start: startPosB,
         end: endPosB,
       },
-      message: "TEST MESSAGE TWOOOOOOOOO",
-      source: "ex ex ex ex ex",
+      message: "TEST MESSAGE TWO",
+      source: "VulnGuard",
     },
   ]);
 }
