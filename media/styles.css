@@ -1,14 +1,26 @@
 h1 {
-  font-size: 4rem;
+  font-size: 3rem;
   margin: 0;
 }
 h2 {
-  font-size: 2rem;
+  font-size: 1.75rem;
   margin: 15px 0;
 }
 p {
-  font-size: 1.1rem;
+  font-size: 1rem;
   margin: 0;
+}
+button {
+  height: 100%;
+  padding: 5px 5px 5px 0;
+  background: transparent;
+  border: 0;
+}
+svg {
+  height: 100%;
+  width: 100%;
+  fill: white;
+  pointer-events: none;
 }
 
 .divider {

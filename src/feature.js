@@ -5,6 +5,13 @@
  * @property {("INFO"|"ERROR"|"WARN")} severity - severity of error
  * @property {string} message - Error message
  *
+ * @typedef {Object} rule
+ * @property {string} id
+ * @property {string} title
+ * @property {string} description
+ * @property {boolean} enabled
+ * @property {("INFO"|"ERROR"|"WARN")} severity
+ *
  * Callback for the security checks to be run on the code
  * @callback checker
  * @param {string} fileUri
@@ -21,16 +28,22 @@ function setFeatureContext(ctx) {
 
 class Feature {
   /**
-   * @param {string} identifier - Lowercase string identifier e.g. semgrep
+   * @param {string} id - Lowercase string identifier e.g. semgrep
    * @param {string} title - Feature title to be displayed e.g. "SemGrep"
-   * @param {checker} checker - The callback that flags code errors
+   * @param {checker} checker - The callback that flags code errors\
+   * @param {rule[]} rules - List of rules
    */
-  constructor(identifier, title, checker) {
-    this.identifier = identifier;
+  constructor(id, title, checker, rules) {
+    this.id = id;
     this.title = title;
     this.checker = checker;
-    this.enabled = getFeatures(context)[identifier];
-    if (this.enabled === undefined) this.enabled = true;
+    this.rules = rules;
+  }
+
+  isEnabled() {
+    const enabled = getFeatures(context)[id];
+    if (enabled === undefined) return undefined;
+    return enabled;
   }
 }
 

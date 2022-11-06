@@ -18,8 +18,43 @@ async function activate(context) {
 
   setFeatureContext(context);
 
-  featureList.push(new Feature("semgrep", "SemGrep", (filename) => {}));
-  featureList.push(new Feature("regex", "Regex", (filename) => {}));
+  featureList.push(
+    new Feature("semgrep", "SemGrep", (filename) => {}, [
+      {
+        id: "sr1",
+        title: "tt1",
+        description: "test trr",
+        enabled: false,
+        severity: "ERROR",
+      },
+      ,
+    ])
+  );
+  featureList.push(
+    new Feature("regex", "Regex", (filename) => {}, [
+      {
+        id: "rr1",
+        title: "t1",
+        description: "test rr",
+        enabled: true,
+        severity: "WARN",
+      },
+      {
+        id: "rr2",
+        title: "t2",
+        description: "test rr",
+        enabled: false,
+        severity: "INFO",
+      },
+      {
+        id: "rr3",
+        title: "t3",
+        description: "test rr",
+        enabled: true,
+        severity: "WARN",
+      },
+    ])
+  );
 
   const vulnDiagnostics = vscode.languages.createDiagnosticCollection("vulns");
   const watcher = vscode.workspace.createFileSystemWatcher("**/*.js");
@@ -63,13 +98,9 @@ async function activate(context) {
   // );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("vulnguard.dashboard", function () {
-      // The code you place here will be executed every time your command is executed
-
-      // Display a message box to the user
-      vscode.window.showInformationMessage("Hello World from VulnGuard!");
-      createWebview(context);
-    }),
+    vscode.commands.registerCommand("vulnguard.dashboard", () =>
+      createWebview(context)
+    ),
     //onSave
     watcher.onDidChange((uri) => {
       if (uri.scheme !== "file") return;
