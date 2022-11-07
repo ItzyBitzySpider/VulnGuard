@@ -7,6 +7,9 @@ const { createWebview } = require("./webview");
 const { Feature, setFeatureContext, Rule } = require("./feature");
 
 const featureList = [];
+function getFeatureList() {
+  return featureList;
+}
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -101,5 +104,5 @@ function deactivate() {}
 module.exports = {
   activate,
   deactivate,
-  featureList,
+  getFeatureList,
 };

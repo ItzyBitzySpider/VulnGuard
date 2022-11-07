@@ -3,6 +3,7 @@ const vscode = require("vscode");
 const path = require("path");
 const Icons = require("./webview-icons");
 const { setFeature } = require("./settings");
+const { getFeatureList } = require("./extension");
 
 let panel = undefined;
 let vulnguardLogo = undefined;
@@ -52,7 +53,7 @@ function createWebview(context) {
  * @param {vscode.ExtensionContext} context
  */
 function updateWebview(context) {
-  const { featureList } = require("./extension");
+  const featureList = getFeatureList();
 
   panel.webview.html = `<html lang="en">
   <head>
