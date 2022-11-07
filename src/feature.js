@@ -5,13 +5,6 @@
  * @property {("INFO"|"ERROR"|"WARN")} severity - severity of error
  * @property {string} message - Error message
  *
- * @typedef {Object} rule
- * @property {string} id
- * @property {string} title
- * @property {string} description
- * @property {boolean} enabled
- * @property {("INFO"|"ERROR"|"WARN")} severity
- *
  * Callback for the security checks to be run on the code
  * @callback checker
  * @param {string} fileUri
@@ -26,12 +19,12 @@ function setFeatureContext(ctx) {
   context = ctx;
 }
 
-class Feature {
+class Rule {
   /**
-   * @param {string} id - Lowercase string identifier e.g. semgrep
-   * @param {string} title - Feature title to be displayed e.g. "SemGrep"
-   * @param {checker} checker - The callback that flags code errors\
-   * @param {rule[]} rules - List of rules
+   * @param {string} id
+   * @param {string} title
+   * @param {string} description
+   * @param {("INFO"|"ERROR"|"WARN")} severity
    */
   constructor(id, title, checker, rules) {
     this.id = id;
@@ -41,10 +34,29 @@ class Feature {
   }
 
   isEnabled() {
-    const enabled = getFeatures(context)[id];
+    return true;
+  }
+}
+
+class Feature {
+  /**
+   * @param {string} id - Lowercase string identifier e.g. semgrep
+   * @param {string} title - Feature title to be displayed e.g. "SemGrep"
+   * @param {checker} checker - The callback that flags code errors\
+   * @param {Rule[]} rules - List of rules
+   */
+  constructor(id, title, checker, rules) {
+    this.id = id;
+    this.title = title;
+    this.checker = checker;
+    this.rules = rules;
+  }
+
+  isEnabled() {
+    const enabled = getFeatures(context)[this.id];
     if (enabled === undefined) return undefined;
     return enabled;
   }
 }
 
-module.exports = { Feature, setFeatureContext };
+module.exports = { Feature, Rule, setFeatureContext };

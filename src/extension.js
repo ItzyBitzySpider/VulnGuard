@@ -4,7 +4,7 @@ const vscode = require("vscode");
 const diagnostics = require("./diagnostics");
 const semgrep = require("./semgrep");
 const { createWebview } = require("./webview");
-const { Feature, setFeatureContext } = require("./feature");
+const { Feature, setFeatureContext, Rule } = require("./feature");
 
 const featureList = [];
 
@@ -20,39 +20,14 @@ async function activate(context) {
 
   featureList.push(
     new Feature("semgrep", "SemGrep", (filename) => {}, [
-      {
-        id: "sr1",
-        title: "tt1",
-        description: "test trr",
-        enabled: false,
-        severity: "ERROR",
-      },
-      ,
+      new Rule("sr1", "tt1", "test trr", "ERROR"),
     ])
   );
   featureList.push(
     new Feature("regex", "Regex", (filename) => {}, [
-      {
-        id: "rr1",
-        title: "t1",
-        description: "test rr",
-        enabled: true,
-        severity: "WARN",
-      },
-      {
-        id: "rr2",
-        title: "t2",
-        description: "test rr",
-        enabled: false,
-        severity: "INFO",
-      },
-      {
-        id: "rr3",
-        title: "t3",
-        description: "test rr",
-        enabled: true,
-        severity: "WARN",
-      },
+      new Rule("rr1", "t1", "test rr", "WARN"),
+      new Rule("rr2", "t2", "test rr", "INFO"),
+      new Rule("rr3", "t3", "test rr", "ERROR"),
     ])
   );
 
