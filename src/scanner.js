@@ -9,8 +9,8 @@ const execFileAsync = promisify(execFile);
 async function semgrepRuleSetsScan(configs, path, exclude=null) {
     var hits = [];
     //append --exclude-rule to semgrep command for each exclude rule
-    if (exclude) exclude = exclude.map((rule) => { return "--exclude-rule=" + rule; });
-    const promises = configs.map((config) => { return execFileAsync("semgrep", ["--json", exclude, "--config=" + config, path]); });
+    if (exclude) exclude = exclude.map((rule) => { return "--exclude-rule=" + rule });
+    const promises = configs.map((config) => { return execFileAsync("semgrep", ["--json", ...exclude, "--config=" + config, path]); });
     const results = await Promise.all(promises);
     for (const result of results) {
         const dat = JSON.parse(result.stdout);
@@ -182,7 +182,7 @@ var semgrepRuleSets = [];
 var enabledRegexRuleSets = [];
 var enabledSemgrepRuleSets = [];
 
-function loadRegexRuleSet(path) {
+async function loadRegexRuleSet(path) {
     var regexRules = [];
     const cfg = fs.readFileSync(path, 'utf8');
     const dat = yaml.parse(cfg);
@@ -255,7 +255,7 @@ function loadRegexRuleSet(path) {
     }
 
     //Use Semgrep to scan Regex rules to check for duplicate IDs, etc.
-    semgrepRuleSetsScan(["p/semgrep-rule-lints"], path, ["missing-language-field", "duplicate-pattern", "unsatisfiable-rule"]).then((results) => { //Remove incompatible rules
+    await semgrepRuleSetsScan(["p/semgrep-rule-lints"], path, ["yaml.semgrep.missing-language-field.missing-language-field", "yaml.semgrep.duplicate-pattern.duplicate-pattern", "yaml.semgrep.unsatisfiable.unsatisfiable-rule"]).then((results) => { //Remove incompatible rules
         for (const result of results) {
             if (result.severity === "ERROR") {
                  throw result;
@@ -291,9 +291,12 @@ function loadSemgrepRuleSets(dir) {
     }
 }
 
-loadRegexRuleSet('rules.yml')
+//wrap in async since top level runs synchronously
+(async () => {
+await loadRegexRuleSet('rules.yml')
 loadSemgrepRuleSet('p/default')
 
 console.time('test')
 scan("sample.js")
 console.timeEnd('test')
+})();
