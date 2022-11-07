@@ -16,39 +16,39 @@ class FixVulnCodeActionProvider {
    */
 
   provideCodeActions(document, range, context, token) {
-    // for each diagnostic entry that has the matching `code`, create a code action command
-    console.log(document, range);
-    console.log(
-      context.diagnostics
-        .filter((diagnostic) => diagnostic.code === FIX_VULN_CODE)
-        .map((diagnostic) => this.createCommandCodeAction(document, diagnostic))
-    );
-    console.log(context.diagnostics);
     return context.diagnostics
-      .filter((diagnostic) => diagnostic.code === FIX_VULN_CODE)
-      .map((diagnostic) => this.createCommandCodeAction(document, diagnostic));
+      .filter((diagnostic) => diagnostic.tags.includes(FIX_VULN_CODE))
+      .map((diagnostic) => this.createCodeAction(document, diagnostic.range));
   }
 
   /**
    *
    * @param {vscode.TextDocument} document
-   * @param {vscode.Diagnostic} diagnostic
+   * @param {vscode.Range} range
+   * @returns {vscode.CodeAction}
    */
-  createCodeAction(document, diagnostic) {
+  createCodeAction(document, range) {
     const fixAction = new vscode.CodeAction(
       "Fix bug",
       vscode.CodeActionKind.QuickFix
     );
+    //Copy range to avoid invalidArgument range
+    const r = new vscode.Range(
+      range.start.line,
+      range.start.character,
+      range.end.line,
+      range.end.character
+    );
     fixAction.edit = new vscode.WorkspaceEdit();
     fixAction.edit.replace(
       document.uri,
-      new vscode.Range(
-        diagnostic.range.start,
-        diagnostic.range.end.translate(0, " TEST OUTPUT".length)
-      ),
-      document.getText(diagnostic.range) + " TEST OUTPUT"
+      r,
+      document.getText(r) + " TEST OUTPUT"
     );
+    return fixAction;
   }
 }
 
-module.exports = { FixVulnCodeActionProvider };
+module.exports = {
+  FixVulnCodeActionProvider,
+};
