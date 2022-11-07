@@ -57,7 +57,7 @@ async function regexRuleScan(rule, path) {
                         "end": rule.regex.lastIndex,
                     },
                     "message": rule.message,
-                    ...(result.extra.fix && { "fix": result.extra.fix }),
+                    ...(rule.fix && { "fix": rule.fix }),
                     "id": rule.id,
                     "source": "VulnGuard",
                 });
@@ -68,7 +68,7 @@ async function regexRuleScan(rule, path) {
                     "severity": rule.severity,
                     "line_no": line_no,
                     "message": rule.message,
-                    ...(result.extra.fix && { "fix": result.extra.fix }),
+                    ...(rule.fix && { "fix": rule.fix }),
                     "id": rule.id,
                     "source": "VulnGuard",
                 });
@@ -141,9 +141,6 @@ function validateRegexTree(node) {
 
         const val = field[key];
         const val_type = typeof val; //TODO: Should val_type be strictly enforced?
-        /*if(val_type !== "string" && val_type !== "object"){
-            throw "Unknown value type " + val_type
-        }*/
 
         if (val_type === "object") {
             if (key === "regex_not") {
@@ -162,24 +159,70 @@ function validateRegexTree(node) {
 function loadRegexRules(path) {
     const cfg = fs.readFileSync(path, 'utf8');
     const dat = yaml.parse(cfg);
-    for (const rule of dat.rules) { //TODO: Implement fix for Regex?
-        if (!('id' in rule)) {
+    for (const rule of dat.rules) {
+        const propertyNames = Object.getOwnPropertyNames(rule);
+        var f_id = false, f_message = false, f_severity = false, f_regex = false, f_fix = false, regex_type = "";
+        for (const propertyName of propertyNames) {
+            if (propertyName === "id") {
+                f_id = true;
+            } else if (propertyName === "message") {
+                f_message = true;
+            } else if (propertyName === "severity") {
+                f_severity = true;
+            } else if (propertyName === "regex" || propertyName === "regex_and" || propertyName === "regex_or" || propertyName === "regex_not") {
+                if (f_regex) {
+                    throw "Only 1 top-level regex property is supported (found duplicate types: " + regex_type + " & " + propertyName + ")";
+                }
+                f_regex = true;
+                regex_type = propertyName;
+            } else if (propertyName === "fix") { //Optional
+                f_fix = true;
+            } else {
+                throw "Unknown property name " + propertyName;
+            }
+        }
+
+        if (!f_id) {
             throw "rule is missing 'id' field";
         }
-        if (!('message' in rule)) {
+        if (!f_message) {
             throw "rule is missing 'message' field";
         }
-        if (!('severity' in rule)) {
+        if (!f_severity) {
             throw "rule is missing 'severity' field";
         }
-        if (!('regex' in rule)) {
-            throw "rule is missing 'regex' field";
-        } //TODO: Throw error on unrecognized fields (fix, metadata optional)
+        if (!f_regex) {
+            throw "rule is missing 'regex'/'regex_and'/'regex_or'/'regex_not' field";
+        }
 
-        if (typeof rule.regex === "object") {
+        if (regex_type === "regex" || regex_type === "regex_and") {
+            if (regex_type === "regex_and") { //Internally swtich regex_and -> regex
+                rule.regex = rule.regex_and
+                delete rule.regex_and
+            }
+
+            if (typeof rule.regex === "object") {
+                validateRegexTree(rule.regex);
+            } else { //TODO: Should val_type be strictly enforced?
+                rule.regex = new RegExp(rule.regex, 'g'); //Compile regex while validating
+            }
+        } else if (regex_type === "regex_or") {
+            if (typeof rule.regex_or !== "object") {
+                throw "regex_or can only be used on a regex subtree";
+            }
+
+            rule.regex = [{regex_or: rule.regex_or}] //Internally make regex_or a subtree of regex
+            delete rule.regex_or
+
             validateRegexTree(rule.regex);
-        } else { //TODO: Should val_type be strictly enforced?
-            rule.regex = new RegExp(rule.regex, 'g') ;//Compile regex while validating
+        } else { //regex_not
+            if (typeof rule.regex_not === "object") {
+                throw "regex_not cannot be used on a regex subtree";
+            } //TODO: Should val_type be strictly enforced?
+            rule.regex_not = new RegExp(rule.regex_not, 'g'); //Compile regex while validating
+
+            rule.regex = [{regex_not: rule.regex_not}] //Internally make regex_not a subfield of regex
+            delete rule.regex_not
         }
         regexRules.push(rule);
     }
