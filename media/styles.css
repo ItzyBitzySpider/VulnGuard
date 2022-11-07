@@ -49,6 +49,7 @@ p {
 
 .entries {
   width: 600px;
+  min-height: 8rem;
   background-color: #3f3f46;
   border-radius: 10px;
 }
@@ -118,7 +119,7 @@ p {
   background-color: #3f3f46;
 }
 /* Checkbox hover */
-.checkbox:hover input ~ .checkmark {
+.checkbox:hover input:not([disabled]) ~ .checkmark {
   background-color: #71717a;
 }
 /* Checkmark tick (hidden when not checked) */
@@ -141,5 +142,5 @@ p {
   transform: rotate(45deg);
 }
 .checkbox.disabled {
-  color: #3f3f46;
+  color: #71717a;
 }

@@ -19,12 +19,12 @@ async function activate(context) {
 
   const featureList = Global.getFeatureList();
   featureList.push(
-    new Feature("semgrep", "SemGrep", (filename) => {}, [
+    new Feature("semgrep", "SemGrep", () => {}, [
       new Rule("sr1", "tt1", "test trr", "ERROR"),
     ])
   );
   featureList.push(
-    new Feature("regex", "Regex", (filename) => {}, [
+    new Feature("regex", "Regex", () => {}, [
       new Rule("rr1", "t1", "test rr", "WARN"),
       new Rule("rr2", "t2", "test rr", "INFO"),
       new Rule("rr3", "t3", "test rr", "ERROR"),
