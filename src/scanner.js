@@ -41,10 +41,10 @@ async function regexRuleSetsScan(ruleSets, path) {
     return hits;
 }
 
-async function regexRuleSetScan(rules, path) {
+async function regexRuleSetScan(ruleSet, path) {
     var hits = [];
     //array of promises to run regex for each rule
-    const promises = rules.map((rule) => { return regexRuleScan(rule, path); });
+    const promises = ruleSet.ruleSet.map((rule) => { return regexRuleScan(rule, path); });
     const results = await Promise.all(promises);
     for (const result of results) {
         hits = hits.concat(result);
@@ -90,7 +90,7 @@ async function regexRuleScan(rule, path) {
 }
 
 function scan(path) {
-    Promise.all([semgrepRuleSetsScan(semgrepRuleSets, path), regexRuleSetsScan(regexRuleSets, path)]).then((values) => {
+    Promise.all([semgrepRuleSetsScan(enabledSemgrepRuleSets, path), regexRuleSetsScan(enabledRegexRuleSets, path)]).then((values) => {
         console.log(values);
     });
 }
@@ -179,6 +179,9 @@ function getFilesRecursively(top_dir) {
 var regexRuleSets = [];
 var semgrepRuleSets = [];
 
+var enabledRegexRuleSets = [];
+var enabledSemgrepRuleSets = [];
+
 function loadRegexRuleSet(path) {
     var regexRules = [];
     const cfg = fs.readFileSync(path, 'utf8');
@@ -260,7 +263,9 @@ function loadRegexRuleSet(path) {
                  console.log(result);
             }
         }
-        regexRuleSets.push(regexRules); //Only add current RuleSet if it has no errors
+        var tmp = {path: path, ruleSet: regexRules}; //Only add current RuleSet if it has no errors
+        regexRuleSets.push(tmp);
+        enabledRegexRuleSets.push(tmp);
     }).catch((error) => {
         console.error(error);
         throw "Error parsing regex RuleSet";
@@ -276,6 +281,7 @@ function loadRegexRuleSets(dir) {
 
 function loadSemgrepRuleSet(path) { //TODO: Do proper data validation?
     semgrepRuleSets.push(path);
+    enabledSemgrepRuleSets.push(path);
 }
 
 function loadSemgrepRuleSets(dir) {

@@ -1,4 +1,5 @@
 const vscode = require("vscode");
+const { FIX_VULN_CODE } = require("./globals");
 
 let activeEditor = undefined;
 
@@ -25,6 +26,7 @@ function updateDiagnostics(vulnDiagnostics) {
       },
       message: "TEST MESSAGE",
       source: "VulnGuard",
+      code: FIX_VULN_CODE,
     },
     {
       severity: vscode.DiagnosticSeverity.Information,
@@ -34,6 +36,7 @@ function updateDiagnostics(vulnDiagnostics) {
       },
       message: "TEST MESSAGE TWO",
       source: "VulnGuard",
+      code: FIX_VULN_CODE,
     },
   ]);
 }
