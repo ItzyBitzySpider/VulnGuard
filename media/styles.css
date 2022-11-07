@@ -140,3 +140,6 @@ p {
   border-width: 0 3px 3px 0;
   transform: rotate(45deg);
 }
+.checkbox.disabled {
+  color: #3f3f46;
+}
