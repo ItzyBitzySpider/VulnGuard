@@ -9,8 +9,8 @@ const execFileAsync = promisify(execFile);
 async function semgrepRuleSetsScan(configs, path, exclude=null) {
     var hits = [];
     //append --exclude-rule to semgrep command for each exclude rule
-    if (exclude) exclude = exclude.map((rule) => { return "--exclude-rule=" + rule; });
-    const promises = configs.map((config) => { return execFileAsync("semgrep", ["--json", exclude, "--config=" + config, path]); });
+    if (exclude) exclude = exclude.map((rule) => { return "--exclude-rule=" + rule });
+    const promises = configs.map((config) => { return execFileAsync("semgrep", ["--json", ...exclude, "--config=" + config, path]); });
     const results = await Promise.all(promises);
     for (const result of results) {
         const dat = JSON.parse(result.stdout);
