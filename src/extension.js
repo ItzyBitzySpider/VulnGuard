@@ -5,11 +5,7 @@ const diagnostics = require("./diagnostics");
 const semgrep = require("./semgrep");
 const { createWebview } = require("./webview");
 const { Feature, setFeatureContext, Rule } = require("./feature");
-
-const featureList = [];
-function getFeatureList() {
-  return featureList;
-}
+const Global = require("./globals");
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -21,6 +17,7 @@ async function activate(context) {
 
   setFeatureContext(context);
 
+  const featureList = Global.getFeatureList();
   featureList.push(
     new Feature("semgrep", "SemGrep", (filename) => {}, [
       new Rule("sr1", "tt1", "test trr", "ERROR"),
@@ -104,5 +101,4 @@ function deactivate() {}
 module.exports = {
   activate,
   deactivate,
-  getFeatureList,
 };
