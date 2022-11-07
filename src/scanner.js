@@ -31,7 +31,17 @@ async function semgrepRuleSetsScan(configs, path, exclude=null) {
     return hits;
 }
 
-async function regexRuleSetsScan(rules, path) {
+async function regexRuleSetsScan(ruleSets, path) {
+    var hits = [];
+    const promises = ruleSets.map((ruleSet) => { return regexRuleSetScan(ruleSet, path); });
+    const results = await Promise.all(promises);
+    for (const result of results) {
+        hits = hits.concat(result);
+    }
+    return hits;
+}
+
+async function regexRuleSetScan(rules, path) {
     var hits = [];
     //array of promises to run regex for each rule
     const promises = rules.map((rule) => { return regexRuleScan(rule, path); });
