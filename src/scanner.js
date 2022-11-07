@@ -250,7 +250,21 @@ function loadRegexRuleSet(path) {
         }
         regexRules.push(rule);
     }
-    regexRuleSets.push(regexRules);
+
+    //Use Semgrep to scan Regex rules to check for duplicate IDs, etc.
+    semgrepRuleSetsScan(["p/semgrep-rule-lints"], path).then((results) => { //TODO: Use custom version ot semgrep-rule-lints to remove language check
+        for (const result of results) {
+            if (result.severity === "ERROR") {
+                 throw result;
+            } else {
+                 console.log(result);
+            }
+        }
+        regexRuleSets.push(regexRules); //Only add current RuleSet if it has no errors
+    }).catch((error) => {
+        console.error(error);
+        throw "Error parsing regex RuleSet";
+    });
 }
 
 function loadRegexRuleSets(dir) {
