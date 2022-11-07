@@ -1,3 +1,7 @@
+* {
+  user-select: none;
+}
+
 h1 {
   font-size: 3rem;
   margin: 0;
@@ -77,9 +81,13 @@ p {
   background: transparent;
   border: 0;
   display: none;
+  cursor: pointer;
 }
 .entries > div:hover button {
   display: block;
+}
+.entries .disabled {
+  color: #2b2929;
 }
 
 /* Checkbox label */

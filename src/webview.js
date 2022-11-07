@@ -155,7 +155,9 @@ function updateWebview(context) {
           (prevRule, currRule) =>
             prevRule +
             `<div class="row">
-        <p style="flex: 1">${currRule.title}</p>
+        <p class="${currRule.isEnabled() ? "" : "disabled"}" style="flex: 1">${
+              currRule.title
+            }</p>
         <button id="${curr.id}__button__${
               currRule.id
             }__button__${!currRule.isEnabled()}" type="button">
