@@ -21,8 +21,7 @@ async function semgrepScan(configs, path) {
                     "end": result.end.offset,
                 },
                 "message": result.extra.message,
-                //...(result.extra.fix && { "fix": result.extra.fix }),  //adds fix if it exists
-                "fix": result.extra.fix ?? null,
+                ...(result.extra.fix && { "fix": result.extra.fix }),
                 "id": result.check_id,
                 "source": "VulnGuard",
             });
@@ -39,7 +38,6 @@ async function regexScan(rules, path) {
     for (const result of results) {
         hits = hits.concat(result);
     }
-    console.log(hits);
     return hits;
 }
 
@@ -58,9 +56,8 @@ async function regexRuleScan(rule, path) {
                         "start": match.index,
                         "end": rule.regex.lastIndex,
                     },
-                    "line_no": line_no,
                     "message": rule.message,
-                    "fix": rule.fix ?? null,
+                    ...(result.extra.fix && { "fix": result.extra.fix }),
                     "id": rule.id,
                     "source": "VulnGuard",
                 });
@@ -69,13 +66,9 @@ async function regexRuleScan(rule, path) {
             if (applyRegexCheck(rule.regex, "regex_and", line)) {
                 hits.push({
                     "severity": rule.severity,
-                    "range": {
-                        "start": null,
-                        "end": null,
-                    },
                     "line_no": line_no,
                     "message": rule.message,
-                    "fix": rule.fix ?? null,
+                    ...(result.extra.fix && { "fix": result.extra.fix }),
                     "id": rule.id,
                     "source": "VulnGuard",
                 });
