@@ -6,11 +6,11 @@ const readline = require("readline");
 const yaml = require('yaml');
 const execFileAsync = promisify(execFile);
 
-async function semgrepRuleSetsScan(configs, path) {
+async function semgrepRuleSetsScan(configs, path, exclude=null) {
     var hits = [];
-    //configs is list of paths to config files, path is path to directory/file to scan
-    //array of promises to run semgrep for each config
-    const promises = configs.map((config) => { return execFileAsync("semgrep", ["--json", "--config=" + config, path]); });
+    //append --exclude-rule to semgrep command for each exclude rule
+    if (exclude) exclude = exclude.map((rule) => { return "--exclude-rule=" + rule; });
+    const promises = configs.map((config) => { return execFileAsync("semgrep", ["--json", exclude, "--config=" + config, path]); });
     const results = await Promise.all(promises);
     for (const result of results) {
         const dat = JSON.parse(result.stdout);
@@ -41,10 +41,10 @@ async function regexRuleSetsScan(ruleSets, path) {
     return hits;
 }
 
-async function regexRuleSetScan(rules, path) {
+async function regexRuleSetScan(ruleSet, path) {
     var hits = [];
     //array of promises to run regex for each rule
-    const promises = rules.map((rule) => { return regexRuleScan(rule, path); });
+    const promises = ruleSet.ruleSet.map((rule) => { return regexRuleScan(rule, path); });
     const results = await Promise.all(promises);
     for (const result of results) {
         hits = hits.concat(result);
@@ -90,7 +90,7 @@ async function regexRuleScan(rule, path) {
 }
 
 function scan(path) {
-    Promise.all([semgrepRuleSetsScan(semgrepRuleSets, path), regexRuleSetsScan(regexRuleSets, path)]).then((values) => {
+    Promise.all([semgrepRuleSetsScan(enabledSemgrepRuleSets, path), regexRuleSetsScan(enabledRegexRuleSets, path)]).then((values) => {
         console.log(values);
     });
 }
@@ -179,6 +179,9 @@ function getFilesRecursively(top_dir) {
 var regexRuleSets = [];
 var semgrepRuleSets = [];
 
+var enabledRegexRuleSets = [];
+var enabledSemgrepRuleSets = [];
+
 function loadRegexRuleSet(path) {
     var regexRules = [];
     const cfg = fs.readFileSync(path, 'utf8');
@@ -221,8 +224,8 @@ function loadRegexRuleSet(path) {
 
         if (regex_type === "regex" || regex_type === "regex_and") {
             if (regex_type === "regex_and") { //Internally swtich regex_and -> regex
-                rule.regex = rule.regex_and
-                delete rule.regex_and
+                rule.regex = rule.regex_and;
+                delete rule.regex_and;
             }
 
             if (typeof rule.regex === "object") {
@@ -235,8 +238,8 @@ function loadRegexRuleSet(path) {
                 throw "regex_or can only be used on a regex subtree";
             }
 
-            rule.regex = [{regex_or: rule.regex_or}] //Internally make regex_or a subtree of regex
-            delete rule.regex_or
+            rule.regex = [{regex_or: rule.regex_or}]; //Internally make regex_or a subtree of regex
+            delete rule.regex_or;
 
             validateRegexTree(rule.regex);
         } else { //regex_not
@@ -245,14 +248,14 @@ function loadRegexRuleSet(path) {
             } //TODO: Should val_type be strictly enforced?
             rule.regex_not = new RegExp(rule.regex_not, 'g'); //Compile regex while validating
 
-            rule.regex = [{regex_not: rule.regex_not}] //Internally make regex_not a subfield of regex
-            delete rule.regex_not
+            rule.regex = [{regex_not: rule.regex_not}]; //Internally make regex_not a subfield of regex
+            delete rule.regex_not;
         }
         regexRules.push(rule);
     }
 
     //Use Semgrep to scan Regex rules to check for duplicate IDs, etc.
-    semgrepRuleSetsScan(["p/semgrep-rule-lints"], path).then((results) => { //TODO: Use custom version ot semgrep-rule-lints to remove language check
+    semgrepRuleSetsScan(["p/semgrep-rule-lints"], path, ["missing-language-field", "duplicate-pattern", "unsatisfiable-rule"]).then((results) => { //Remove incompatible rules
         for (const result of results) {
             if (result.severity === "ERROR") {
                  throw result;
@@ -260,7 +263,9 @@ function loadRegexRuleSet(path) {
                  console.log(result);
             }
         }
-        regexRuleSets.push(regexRules); //Only add current RuleSet if it has no errors
+        var tmp = {path: path, ruleSet: regexRules}; //Only add current RuleSet if it has no errors
+        regexRuleSets.push(tmp);
+        enabledRegexRuleSets.push(tmp);
     }).catch((error) => {
         console.error(error);
         throw "Error parsing regex RuleSet";
@@ -276,6 +281,7 @@ function loadRegexRuleSets(dir) {
 
 function loadSemgrepRuleSet(path) { //TODO: Do proper data validation?
     semgrepRuleSets.push(path);
+    enabledSemgrepRuleSets.push(path);
 }
 
 function loadSemgrepRuleSets(dir) {
