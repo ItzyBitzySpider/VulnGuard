@@ -1,7 +1,12 @@
 const vscode = require("vscode");
 const path = require("path");
 const Icons = require("./webview-icons");
-const { setFeature } = require("./settings");
+const {
+  setFeature,
+  getIgnoredRegex,
+  addIgnoredRegex,
+  deleteIgnoredRegex,
+} = require("./settings");
 const Global = require("./globals");
 
 let panel = undefined;
@@ -44,6 +49,62 @@ function createWebview(context) {
       context.subscriptions
     );
   }
+
+  panel.webview.onDidReceiveMessage(
+    (message) => {
+      switch (message.command) {
+        case "checkbox":
+          vscode.window.showInformationMessage(
+            message.id + " " + message.value
+          );
+          setFeature(context, message.id, message.value);
+          return;
+
+        case "button":
+          vscode.window.showInformationMessage(
+            message.id + " " + message.rule + " " + message.value
+          );
+          if (message.id === "ignore") {
+            if (message.rule === "add")
+              vscode.window
+                .showInputBox({
+                  placeHolder: "e.g. tmp/*.js",
+                  prompt: "Add VulnGuard ignore regex",
+                  value: "",
+                })
+                .then((query) => {
+                  if (!query || query === "") {
+                    vscode.window.showInformationMessage(
+                      "VulnGuard: Ignored directory not added. No directory was written"
+                    );
+                    return;
+                  }
+                  addIgnoredRegex(context, query);
+                  vscode.window.showInformationMessage(
+                    "VulnGuard: Ignored directory added"
+                  );
+                  updateWebview(context);
+                });
+            else if (!Number.isNaN(message.rule)) {
+              const idx = parseInt(message.rule);
+              if (idx >= 0 && idx < getIgnoredRegex(context).length) {
+                deleteIgnoredRegex(context, idx);
+                vscode.window.showInformationMessage(
+                  "VulnGuard: Ignored directory deleted"
+                );
+                updateWebview(context);
+              } else
+                vscode.window.showInformationMessage(
+                  `VulnGuard: Unexpected error occurred when deleting ignored directory at ${idx}`
+                );
+            }
+          }
+          return;
+      }
+    },
+    undefined,
+    context.subscriptions
+  );
   updateWebview(context);
 }
 
@@ -53,6 +114,7 @@ function createWebview(context) {
  */
 function updateWebview(context) {
   const featureList = Global.getFeatureList();
+  const ignoredRegex = getIgnoredRegex(context);
 
   panel.webview.html = `<html lang="en">
   <head>
@@ -146,6 +208,26 @@ function updateWebview(context) {
       `,
         ""
       )} 
+      <h2>Ignored Files</h2>
+      <div class="entries">
+        <div class="row">
+          <p style="flex: 1">Add or modify ignored paths (.js files enabled by default)</p>
+          <button id="ignore__button__add" type="button">
+            ${Icons.add}
+          </button>
+        </div>
+        ${ignoredRegex.reduce(
+          (prev, currRegex, idx) =>
+            prev +
+            `<div class="row">
+        <p style="flex: 1">${currRegex}</p>
+        <button id="ignore__button__${idx}" type="button">
+          ${Icons.trash}
+        </button>
+      </div>`,
+          ""
+        )}
+    </div>
       ${featureList.reduce(
         (prev, curr) =>
           prev +
@@ -186,27 +268,6 @@ function updateWebview(context) {
   </body>
 </html>
 `;
-
-  panel.webview.onDidReceiveMessage(
-    (message) => {
-      switch (message.command) {
-        case "checkbox":
-          vscode.window.showInformationMessage(
-            message.id + " " + message.value
-          );
-          setFeature(context, message.id, message.value);
-          return;
-
-        case "button":
-          vscode.window.showInformationMessage(
-            message.id + " " + message.rule + " " + message.value
-          );
-          return;
-      }
-    },
-    undefined,
-    context.subscriptions
-  );
 }
 
 module.exports = {

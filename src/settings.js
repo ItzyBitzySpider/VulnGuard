@@ -2,15 +2,22 @@ const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
 
-let features = undefined;
-
-function getFeaturesPath(context) {
+function getGlobalPath(context) {
   const dir = context.globalStorageUri.fsPath;
   if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-
-  return dir + "/features.json";
+  return dir;
+}
+function getWorkspacePath(context) {
+  const dir = context.storageUri.fsPath;
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+  return dir;
 }
 
+let features = undefined;
+function getFeaturesPath(context) {
+  const dir = getGlobalPath(context);
+  return path.join(dir, "features.json");
+}
 /**
  * @param {vscode.ExtensionContext} context
  */
@@ -27,7 +34,6 @@ function getFeatures(context) {
   features = JSON.parse(fs.readFileSync(featuresPath));
   return features;
 }
-
 /**
  * @param {vscode.ExtensionContext} context
  * @param {string} feature
@@ -37,7 +43,44 @@ function setFeature(context, feature, enabled) {
   features[feature] = enabled;
 
   const featuresPath = getFeaturesPath(context);
-  fs.writeFile(featuresPath, features.toString());
+  fs.writeFile(featuresPath, JSON.stringify(features), function (err) {
+    if (err) return console.log(err);
+    console.log(`Written to ${featuresPath}`);
+  });
 }
 
-module.exports = { getFeatures, setFeature };
+let ignoredRegex = undefined;
+function getIgnoredRegexPath(context) {
+  const dir = getWorkspacePath(context);
+  return path.join(dir, "ignored.txt");
+}
+function getIgnoredRegex(context) {
+  if (ignoredRegex) return ignoredRegex;
+  if (!context) return undefined;
+
+  const ignoredPath = getIgnoredRegexPath(context);
+  if (!fs.existsSync(ignoredPath)) ignoredRegex = [];
+  else ignoredRegex = fs.readFileSync(ignoredPath, "utf-8").split("\n");
+
+  return ignoredRegex;
+}
+function addIgnoredRegex(context, regex) {
+  ignoredRegex.push(regex);
+  const ignoredPath = getIgnoredRegexPath(context);
+  fs.writeFileSync(ignoredPath, ignoredRegex.join("\n"));
+}
+function deleteIgnoredRegex(context, idx) {
+  console.log("Slicing", ignoredRegex);
+  ignoredRegex.splice(idx, 1);
+  console.log("Result", ignoredRegex);
+  const ignoredPath = getIgnoredRegexPath(context);
+  fs.writeFileSync(ignoredPath, ignoredRegex.join("\n"));
+}
+
+module.exports = {
+  getFeatures,
+  setFeature,
+  getIgnoredRegex,
+  addIgnoredRegex,
+  deleteIgnoredRegex,
+};
