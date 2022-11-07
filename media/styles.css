@@ -118,7 +118,7 @@ p {
   background-color: #3f3f46;
 }
 /* Checkbox hover */
-.checkbox:hover input ~ .checkmark {
+.checkbox:hover input:not([disabled]) ~ .checkmark {
   background-color: #71717a;
 }
 /* Checkmark tick (hidden when not checked) */
@@ -139,4 +139,7 @@ p {
   border: solid white;
   border-width: 0 3px 3px 0;
   transform: rotate(45deg);
+}
+.checkbox.disabled {
+  color: #71717a;
 }

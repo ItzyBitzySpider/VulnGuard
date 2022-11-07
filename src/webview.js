@@ -1,4 +1,3 @@
-const Feature = require("./feature");
 const vscode = require("vscode");
 const path = require("path");
 const Icons = require("./webview-icons");
@@ -127,12 +126,20 @@ function updateWebview(context) {
           prev +
           `
       <div class="row">
-        <label class="checkbox"
-          >${curr.title}
+        <label class="checkbox${
+          curr.id === "semgrep" && isWindows ? " disabled" : ""
+        }"
+          >${
+            curr.title +
+            (curr.id === "semgrep" && isWindows ? " (Disabled on Windows)" : "")
+          }
           <input
             type="checkbox"
             id="${curr.id}__checkbox"
-            checked="${curr.isEnabled()}" />
+            checked="${
+              curr.id === "semgrep" && isWindows ? false : curr.isEnabled()
+            }" 
+            ${curr.id === "semgrep" && isWindows ? `disabled="true"` : ""}/>
           <span class="checkmark"></span
         ></label>
       </div>
@@ -144,6 +151,11 @@ function updateWebview(context) {
           prev +
           `
       <h2>${curr.title}</h2>
+      ${
+        curr.id === "semgrep" && isWindows
+          ? `<p style="margin-top:-10px;margin-bottom:15px;color:#71717a">${curr.title} disabled on Windows</p>`
+          : ""
+      }
       <div class="entries">
         <div class="row">
           <p style="flex: 1">5/15 ${curr.title} Rules Enabled</p>
