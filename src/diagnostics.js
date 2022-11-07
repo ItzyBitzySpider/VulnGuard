@@ -2,11 +2,11 @@ const vscode = require("vscode");
 
 let activeEditor = undefined;
 
-function clearDecorations(vulnDiagnostics) {
+function clearDiagnostics(vulnDiagnostics) {
   if (activeEditor) vulnDiagnostics.clear();
 }
 
-function updateDecoration(vulnDiagnostics) {
+function updateDiagnostics(vulnDiagnostics) {
   if (!activeEditor || !activeEditor.document) return;
   let text = activeEditor.document.getText();
 
@@ -44,8 +44,8 @@ function updateDecoration(vulnDiagnostics) {
  */
 function handleChangeActiveEditor(editor, vulnDiagnostics) {
   activeEditor = editor;
-  if (editor) updateDecoration(vulnDiagnostics);
-  else clearDecorations(vulnDiagnostics);
+  if (editor) updateDiagnostics(vulnDiagnostics);
+  else clearDiagnostics(vulnDiagnostics);
 }
 
 /**
@@ -54,8 +54,8 @@ function handleChangeActiveEditor(editor, vulnDiagnostics) {
  */
 function handleActiveEditorTextChange(event, vulnDiagnostics) {
   if (activeEditor && event.document === activeEditor.document)
-    updateDecoration(vulnDiagnostics);
-  else clearDecorations(vulnDiagnostics);
+    updateDiagnostics(vulnDiagnostics);
+  else clearDiagnostics(vulnDiagnostics);
 }
 
 // TODO Config Change
