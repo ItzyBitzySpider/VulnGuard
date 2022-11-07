@@ -70,9 +70,7 @@ function addIgnoredRegex(context, regex) {
   fs.writeFileSync(ignoredPath, ignoredRegex.join("\n"));
 }
 function deleteIgnoredRegex(context, idx) {
-  console.log("Slicing", ignoredRegex);
   ignoredRegex.splice(idx, 1);
-  console.log("Result", ignoredRegex);
   const ignoredPath = getIgnoredRegexPath(context);
   fs.writeFileSync(ignoredPath, ignoredRegex.join("\n"));
 }
