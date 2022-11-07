@@ -59,20 +59,31 @@ function getIgnoredRegex(context) {
   if (!context) return undefined;
 
   const ignoredPath = getIgnoredRegexPath(context);
-  if (!fs.existsSync(ignoredPath)) ignoredRegex = [];
-  else ignoredRegex = fs.readFileSync(ignoredPath, "utf-8").split("\n");
+  if (!fs.existsSync(ignoredPath))
+    fs.copyFileSync(
+      path.join(context.extensionPath, "files", "ignored.txt"),
+      ignoredPath
+    );
+  ignoredRegex = fs.readFileSync(ignoredPath, "utf-8").split("\n");
 
   return ignoredRegex;
 }
 function addIgnoredRegex(context, regex) {
+  regex = regex.replaceAll("\\", "/");
   ignoredRegex.push(regex);
   const ignoredPath = getIgnoredRegexPath(context);
-  fs.writeFileSync(ignoredPath, ignoredRegex.join("\n"));
+  fs.writeFile(ignoredPath, ignoredRegex.join("\n"), function (err) {
+    if (err) return console.log(err);
+    console.log(`Written to ${ignoredPath}`);
+  });
 }
 function deleteIgnoredRegex(context, idx) {
   ignoredRegex.splice(idx, 1);
   const ignoredPath = getIgnoredRegexPath(context);
-  fs.writeFileSync(ignoredPath, ignoredRegex.join("\n"));
+  fs.writeFile(ignoredPath, ignoredRegex.join("\n"), function (err) {
+    if (err) return console.log(err);
+    console.log(`Written to ${ignoredPath}`);
+  });
 }
 
 module.exports = {
