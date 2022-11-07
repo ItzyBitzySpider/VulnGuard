@@ -31,9 +31,31 @@ async function activate(context) {
     ])
   );
 
-  const vulnDiagnostics = vscode.languages.createDiagnosticCollection("vulns");
   const watcher = vscode.workspace.createFileSystemWatcher("**/*.js");
-
+  const vulnDiagnostics = vscode.languages.createDiagnosticCollection("vulns");
+  const vulnCodeActions = vscode.languages.registerCodeActionsProvider(
+    "**/*.js",
+    {
+      provideCodeActions: (doc, range, ctx, cancellationToken) => {
+        console.log(doc.fileName, range.start, range.end);
+        return [
+          {
+            title: "TITLE",
+            kind: vscode.CodeActionKind.QuickFix,
+            diagnostics: vulnDiagnostics,
+            edit: (a, b) => {
+              console.log(a, b);
+            },
+            arguments: [doc, range],
+          },
+        ];
+      },
+      resolveCodeAction: (codeAction, cancellationToken) => {
+        console.log("SELECTED", codeAction);
+      },
+    },
+    { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }
+  );
   //onSave active document
   vscode.workspace.onDidSaveTextDocument(
     (event) => {
@@ -76,6 +98,9 @@ async function activate(context) {
     vscode.commands.registerCommand("vulnguard.dashboard", () =>
       createWebview(context)
     ),
+    vscode.commands.registerCommand("vulnguard.fixvuln", () =>
+      console.log("FIX VULN")
+    ),
     //onSave
     watcher.onDidChange((uri) => {
       if (uri.scheme !== "file") return;
@@ -91,7 +116,8 @@ async function activate(context) {
       if (uri.scheme !== "file") return;
       console.log(uri);
     }),
-    vulnDiagnostics
+    vulnDiagnostics,
+    vulnCodeActions
   );
 }
 
