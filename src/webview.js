@@ -89,7 +89,7 @@ function updateWebview(context) {
       })();
     </script>
     <div class="row">
-      <div style="margin-right: 50px; min-width: 150px">
+      <div style="margin-right: 50px; width: 150px">
         <img src="${vulnguardLogo}" />
       </div>
       <div class="col" style="margin-right: 20px">
