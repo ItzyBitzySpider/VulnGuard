@@ -1,11 +1,12 @@
 const promisify = require("util").promisify;
 const execFile = require("child_process").execFile;
+const path = require("path");
 const fs = require("fs");
 const readline = require("readline");
 const yaml = require('yaml');
 const execFileAsync = promisify(execFile);
 
-async function semgrepScan(configs, path) {
+async function semgrepRuleSetsScan(configs, path) {
     var hits = [];
     //configs is list of paths to config files, path is path to directory/file to scan
     //array of promises to run semgrep for each config
@@ -30,7 +31,17 @@ async function semgrepScan(configs, path) {
     return hits;
 }
 
-async function regexScan(rules, path) {
+async function regexRuleSetsScan(ruleSets, path) {
+    var hits = [];
+    const promises = ruleSets.map((ruleSet) => { return regexRuleSetScan(ruleSet, path); });
+    const results = await Promise.all(promises);
+    for (const result of results) {
+        hits = hits.concat(result);
+    }
+    return hits;
+}
+
+async function regexRuleSetScan(rules, path) {
     var hits = [];
     //array of promises to run regex for each rule
     const promises = rules.map((rule) => { return regexRuleScan(rule, path); });
@@ -79,7 +90,7 @@ async function regexRuleScan(rule, path) {
 }
 
 function scan(path) {
-    Promise.all([semgrepScan(semgrepRules, path), regexScan(regexRules, path)]).then((values) => {
+    Promise.all([semgrepRuleSetsScan(semgrepRuleSets, path), regexRuleSetsScan(regexRuleSets, path)]).then((values) => {
         console.log(values);
     });
 }
@@ -124,9 +135,6 @@ function applyRegexCheck(node, parent_type, text) { //Assumes tree is valid
     return res;
 }
 
-var semgrepRules = [];
-var regexRules = [];
-
 function validateRegexTree(node) {
     for (const field of node) {
         const propertyNames = Object.getOwnPropertyNames(field);
@@ -156,7 +164,23 @@ function validateRegexTree(node) {
     }
 }
 
-function loadRegexRules(path) {
+function getFilesRecursively(top_dir) {
+    var files = [];
+    function explore(dir) {
+        fs.readdirSync(dir).forEach(file => {
+            const absolute = path.join(dir, file);
+            return fs.statSync(absolute).isDirectory() ? explore(absolute) : files.push(absolute);
+        });
+    }
+    explore(top_dir);
+    return files;
+}
+
+var regexRuleSets = [];
+var semgrepRuleSets = [];
+
+function loadRegexRuleSet(path) {
+    var regexRules = [];
     const cfg = fs.readFileSync(path, 'utf8');
     const dat = yaml.parse(cfg);
     for (const rule of dat.rules) {
@@ -226,15 +250,29 @@ function loadRegexRules(path) {
         }
         regexRules.push(rule);
     }
-    //console.log(util.inspect(regexRules, false, null, true))
+    regexRuleSets.push(regexRules);
 }
 
-function loadSemgrepRules(path) { //TODO: Do proper data validation?
-    semgrepRules.push(path);
+function loadRegexRuleSets(dir) {
+    var files = getFilesRecursively(dir);
+    for (const file of files) {
+        loadRegexRuleSet(file);
+    }
 }
 
-loadRegexRules('rules.yml')
-loadSemgrepRules('semgrep.yml')
+function loadSemgrepRuleSet(path) { //TODO: Do proper data validation?
+    semgrepRuleSets.push(path);
+}
+
+function loadSemgrepRuleSets(dir) {
+    var files = getFilesRecursively(dir);
+    for (const file of files) {
+        loadSemgrepRuleSet(file);
+    }
+}
+
+loadRegexRuleSet('rules.yml')
+loadSemgrepRuleSet('p/default')
 
 console.time('test')
 scan("sample.js")
