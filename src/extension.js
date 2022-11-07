@@ -6,6 +6,7 @@ const semgrep = require("./semgrep");
 const { createWebview } = require("./webview");
 const { Feature, setFeatureContext, Rule } = require("./feature");
 const Global = require("./globals");
+const { FixVulnCodeActionProvider } = require("./codeaction");
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -33,29 +34,34 @@ async function activate(context) {
 
   const watcher = vscode.workspace.createFileSystemWatcher("**/*.js");
   const vulnDiagnostics = vscode.languages.createDiagnosticCollection("vulns");
+  // const vulnCodeActions = vscode.languages.registerCodeActionsProvider(
+  //   "**/*.js",
+  //   {
+  //     provideCodeActions: (doc, range, ctx, cancellationToken) => {
+  //       console.log(doc.fileName, range.start, range.end);
+  //       return [
+  //         {
+  //           title: "TITLE",
+  //           kind: vscode.CodeActionKind.QuickFix,
+  //           diagnostics: vulnDiagnostics,
+  //           edit: (a, b) => {
+  //             console.log(a, b);
+  //           },
+  //           arguments: [doc, range],
+  //         },
+  //       ];
+  //     },
+  //     resolveCodeAction: (codeAction, cancellationToken) => {
+  //       console.log("SELECTED", codeAction);
+  //     },
+  //   },
+  //   { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }
+  // );
   const vulnCodeActions = vscode.languages.registerCodeActionsProvider(
-    "**/*.js",
-    {
-      provideCodeActions: (doc, range, ctx, cancellationToken) => {
-        console.log(doc.fileName, range.start, range.end);
-        return [
-          {
-            title: "TITLE",
-            kind: vscode.CodeActionKind.QuickFix,
-            diagnostics: vulnDiagnostics,
-            edit: (a, b) => {
-              console.log(a, b);
-            },
-            arguments: [doc, range],
-          },
-        ];
-      },
-      resolveCodeAction: (codeAction, cancellationToken) => {
-        console.log("SELECTED", codeAction);
-      },
-    },
-    { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }
+    { language: "typescript", scheme: "file" },
+    new FixVulnCodeActionProvider()
   );
+
   //onSave active document
   vscode.workspace.onDidSaveTextDocument(
     (event) => {
