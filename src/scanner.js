@@ -6,6 +6,7 @@ const readline = require("readline");
 const yaml = require('yaml');
 const execFileAsync = promisify(execFile);
 
+//SEMGREP FUNCTION
 export async function semgrepRuleSetsScan(configs, path, exclude=null) {
     var hits = [];
     //append --exclude-rule to semgrep command for each exclude rule
@@ -30,6 +31,7 @@ export async function semgrepRuleSetsScan(configs, path, exclude=null) {
     return hits;
 }
 
+//REGEX FUNCTION
 export async function regexRuleSetsScan(ruleSets, path) {
     var hits = [];
     const promises = ruleSets.map((ruleSet) => { return regexRuleSetScan(ruleSet, path); });
@@ -133,6 +135,25 @@ function scan(path) {
     });
 }
 
+function getFilesRecursively(top_dir) {
+    var files = [];
+    function explore(dir) {
+        fs.readdirSync(dir).forEach(file => {
+            const absolute = path.join(dir, file);
+            return fs.statSync(absolute).isDirectory() ? explore(absolute) : files.push(absolute);
+        });
+    }
+    explore(top_dir);
+    return files;
+}
+
+var regexRuleSets = [];
+var semgrepRuleSets = [];
+
+var enabledRegexRuleSets = [];
+var enabledSemgrepRuleSets = [];
+
+//Rulesets loading and validation functions
 function validateRegexTree(node) {
     for (const field of node) {
         const propertyNames = Object.getOwnPropertyNames(field);
@@ -161,24 +182,6 @@ function validateRegexTree(node) {
         }
     }
 }
-
-function getFilesRecursively(top_dir) {
-    var files = [];
-    function explore(dir) {
-        fs.readdirSync(dir).forEach(file => {
-            const absolute = path.join(dir, file);
-            return fs.statSync(absolute).isDirectory() ? explore(absolute) : files.push(absolute);
-        });
-    }
-    explore(top_dir);
-    return files;
-}
-
-var regexRuleSets = [];
-var semgrepRuleSets = [];
-
-var enabledRegexRuleSets = [];
-var enabledSemgrepRuleSets = [];
 
 async function loadRegexRuleSet(path) {
     var regexRules = [];
@@ -303,6 +306,7 @@ function validRuleSet(path) {
     return 0;
 }
 
+//Initialise and abstract away backend for frontend
 export async function initScanner() { //TODO: Figure out proper subdirectory names
     if (!fs.existsSync("files/disabled.json")) { //Initialize disabled.json if it does not exist
         fs.writeFileSync('files/disabled.json', JSON.stringify([]), 'utf8');
@@ -378,6 +382,7 @@ export function enableRuleSet(path) {
     fs.writeFileSync('files/disabled.json', JSON.stringify(disabled), 'utf8'); //Update disabled.json
 }
 
+//test function to be deleted
 //wrap in async since top level runs synchronously
 (async () => {
 initScanner();
