@@ -24,7 +24,6 @@ async function semgrepRuleSetsScan(configs, path, exclude=null) {
                 "message": result.extra.message,
                 ...(result.extra.fix && { "fix": result.extra.fix }),
                 "id": result.check_id,
-                "source": "VulnGuard",
             });
         }
     }
@@ -70,7 +69,6 @@ async function regexRuleScan(rule, path) {
                     "message": rule.message,
                     ...(rule.fix && { "fix": rule.fix }),
                     "id": rule.id,
-                    "source": "VulnGuard",
                 });
             }
         } else {
@@ -81,7 +79,6 @@ async function regexRuleScan(rule, path) {
                     "message": rule.message,
                     ...(rule.fix && { "fix": rule.fix }),
                     "id": rule.id,
-                    "source": "VulnGuard",
                 });
             }
         }
