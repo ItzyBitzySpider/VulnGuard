@@ -330,6 +330,53 @@ async function initScanner() { //TODO: Figure out proper subdirectory names
     fs.writeFileSync('files/disabled.json', JSON.stringify(cleanedDisabled), 'utf8'); //Update disabled.json (if necessary)
 }
 
+function disableRuleSet(path) {
+    const validity = validRuleSet(path);
+    if (validity === 1) {
+        enabledRegexRuleSets = enabledRegexRuleSets.filter(item => item.path !== path);
+    } else if (validity === 2) {
+        enabledSemgrepRuleSets = enabledSemgrepRuleSets.filter(item => item !== path);
+    } else {
+        throw "Unable to disable RuleSet " + path + " since it does not exist";
+    }
+
+    const cfg = fs.readFileSync("files/disabled.json", 'utf8');
+    var disabled = JSON.parse(cfg); //Load disabled.json into memory
+
+    if (disabled.includes(path)) {
+        throw "Unable to disable RuleSet " + path + " since it was already disabled";
+    }
+
+    disabled.push(path);
+    fs.writeFileSync('files/disabled.json', JSON.stringify(disabled), 'utf8'); //Update disabled.json
+}
+
+function enableRuleSet(path) {
+    const cfg = fs.readFileSync("files/disabled.json", 'utf8');
+    var disabled = JSON.parse(cfg); //Load disabled.json into memory
+
+    if (!disabled.includes(path)) {
+        throw "Unable to re-enable RuleSet " + path + " since it was not disabled";
+    }
+
+    const validity = validRuleSet(path);
+    if (validity === 1) {
+        for (const regexRuleSet of regexRuleSets) {
+            if (regexRuleSet.path === path) {
+                enabledRegexRuleSets.push(regexRuleSet);
+                break;
+            }
+        }
+    } else if (validity === 2) {
+        enabledSemgrepRuleSets.push(path);
+    } else {
+        throw "Unable to re-enable RuleSet " + path + " since it does not exist";
+    }
+
+    disabled = disabled.filter(item => item !== path);
+    fs.writeFileSync('files/disabled.json', JSON.stringify(disabled), 'utf8'); //Update disabled.json
+}
+
 //wrap in async since top level runs synchronously
 (async () => {
 initScanner();
