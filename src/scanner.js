@@ -6,7 +6,7 @@ const readline = require("readline");
 const yaml = require('yaml');
 const execFileAsync = promisify(execFile);
 
-async function semgrepRuleSetsScan(configs, path, exclude=null) {
+export async function semgrepRuleSetsScan(configs, path, exclude=null) {
     var hits = [];
     //append --exclude-rule to semgrep command for each exclude rule
     if (exclude) exclude = exclude.map((rule) => { return "--exclude-rule=" + rule });
@@ -30,7 +30,7 @@ async function semgrepRuleSetsScan(configs, path, exclude=null) {
     return hits;
 }
 
-async function regexRuleSetsScan(ruleSets, path) {
+export async function regexRuleSetsScan(ruleSets, path) {
     var hits = [];
     const promises = ruleSets.map((ruleSet) => { return regexRuleSetScan(ruleSet, path); });
     const results = await Promise.all(promises);
@@ -86,12 +86,6 @@ async function regexRuleScan(rule, path) {
     return hits;
 }
 
-function scan(path) {
-    Promise.all([semgrepRuleSetsScan(enabledSemgrepRuleSets, path), regexRuleSetsScan(enabledRegexRuleSets, path)]).then((values) => {
-        console.log(values);
-    });
-}
-
 function applyRegexCheck(node, parent_type, text) { //Assumes tree is valid
     var res;
     if (parent_type === "regex" || parent_type === "regex_and") {
@@ -130,6 +124,13 @@ function applyRegexCheck(node, parent_type, text) { //Assumes tree is valid
         }
     }
     return res;
+}
+
+//the function below may be deprecated soon
+function scan(path) {
+    Promise.all([semgrepRuleSetsScan(enabledSemgrepRuleSets, path), regexRuleSetsScan(enabledRegexRuleSets, path)]).then((values) => {
+        console.log(values);
+    });
 }
 
 function validateRegexTree(node) {
@@ -302,7 +303,7 @@ function validRuleSet(path) {
     return 0;
 }
 
-async function initScanner() { //TODO: Figure out proper subdirectory names
+export async function initScanner() { //TODO: Figure out proper subdirectory names
     if (!fs.existsSync("files/disabled.json")) { //Initialize disabled.json if it does not exist
         fs.writeFileSync('files/disabled.json', JSON.stringify([]), 'utf8');
     }
@@ -330,7 +331,7 @@ async function initScanner() { //TODO: Figure out proper subdirectory names
     fs.writeFileSync('files/disabled.json', JSON.stringify(cleanedDisabled), 'utf8'); //Update disabled.json (if necessary)
 }
 
-function disableRuleSet(path) {
+export function disableRuleSet(path) {
     const validity = validRuleSet(path);
     if (validity === 1) {
         enabledRegexRuleSets = enabledRegexRuleSets.filter(item => item.path !== path);
@@ -351,7 +352,7 @@ function disableRuleSet(path) {
     fs.writeFileSync('files/disabled.json', JSON.stringify(disabled), 'utf8'); //Update disabled.json
 }
 
-function enableRuleSet(path) {
+export function enableRuleSet(path) {
     const cfg = fs.readFileSync("files/disabled.json", 'utf8');
     var disabled = JSON.parse(cfg); //Load disabled.json into memory
 
