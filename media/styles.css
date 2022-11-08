@@ -131,6 +131,9 @@ p {
 .checkbox input:checked ~ .checkmark:after {
   display: block;
 }
+.checkbox.disabled input:checked ~ .checkmark:after {
+  display: none;
+}
 /* Style the checkmark tick */
 .checkbox .checkmark:after {
   left: 9px;
