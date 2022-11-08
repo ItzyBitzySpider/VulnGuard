@@ -54,16 +54,13 @@ function createWebview(context) {
     (message) => {
       switch (message.command) {
         case "checkbox":
-          vscode.window.showInformationMessage(
-            message.id + " " + message.value
-          );
           setFeature(context, message.id, message.value);
+          vscode.window.showInformationMessage(
+            "VulnGuard: Feature selection saved"
+          );
           return;
 
         case "button":
-          vscode.window.showInformationMessage(
-            message.id + " " + message.rule + " " + message.value
-          );
           if (message.id === "ignore") {
             if (message.rule === "add")
               vscode.window
@@ -73,9 +70,9 @@ function createWebview(context) {
                   value: "",
                 })
                 .then((query) => {
-                  if (!query || query === "") {
+                  if (!query || query === "" || query.includes(",")) {
                     vscode.window.showInformationMessage(
-                      "VulnGuard: Ignored directory not added. No directory was written"
+                      "VulnGuard: Ignored directory not added as an error occurred."
                     );
                     return;
                   }
@@ -95,7 +92,7 @@ function createWebview(context) {
                 updateWebview(context);
               } else
                 vscode.window.showInformationMessage(
-                  `VulnGuard: Unexpected error occurred when deleting ignored directory at ${idx}`
+                  `VulnGuard: An error occurred when deleting ignored directory at ${idx}`
                 );
             }
           }

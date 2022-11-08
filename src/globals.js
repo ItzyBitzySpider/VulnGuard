@@ -1,4 +1,10 @@
+const { Feature } = require("./feature");
+
 const featureList = [];
+/**
+ *
+ * @returns {Feature[]}
+ */
 function getFeatureList() {
   return featureList;
 }

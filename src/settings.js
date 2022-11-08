@@ -64,7 +64,7 @@ function getIgnoredRegex(context) {
       path.join(context.extensionPath, "files", "ignored.txt"),
       ignoredPath
     );
-  ignoredRegex = fs.readFileSync(ignoredPath, "utf-8").split("\n");
+  ignoredRegex = fs.readFileSync(ignoredPath, "utf-8").split(/\r?\n/);
 
   return ignoredRegex;
 }
