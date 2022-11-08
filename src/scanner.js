@@ -269,10 +269,10 @@ async function loadRegexRuleSet(path) {
     });
 }
 
-function loadRegexRuleSets(dir) {
+async function loadRegexRuleSets(dir) {
     var files = getFilesRecursively(dir);
     for (const file of files) {
-        loadRegexRuleSet(file);
+        await loadRegexRuleSet(file);
     }
 }
 
@@ -288,10 +288,51 @@ function loadSemgrepRuleSets(dir) {
     }
 }
 
+function validRuleSet(path) {
+    for (const regexRuleSet of regexRuleSets) {
+        if (regexRuleSet.path === path) {
+            return 1;
+        }
+    }
+    for (const semgrepRuleSet of semgrepRuleSets) {
+        if (semgrepRuleSet === path) {
+            return 2;
+        }
+    }
+    return 0;
+}
+
+async function initScanner() { //TODO: Figure out proper subdirectory names
+    if (!fs.existsSync("files/disabled.json")) { //Initialize disabled.json if it does not exist
+        fs.writeFileSync('files/disabled.json', JSON.stringify([]), 'utf8');
+    }
+
+    const cfg = fs.readFileSync("files/disabled.json", 'utf8');
+    var disabled = JSON.parse(cfg); //Load disabled.json into memory
+
+    await loadRegexRuleSets("files/regex_rules"); //Load all the rules into memory
+    loadSemgrepRuleSets("files/semgrep_rules");
+
+    var cleanedDisabled = [];
+    for (const disabledRuleSet of disabled) { //Process disabled.json
+        const validity = validRuleSet(disabledRuleSet);
+        if (validity === 1) {
+            cleanedDisabled.push(disabledRuleSet);
+            enabledRegexRuleSets = enabledRegexRuleSets.filter(item => item.path !== disabledRuleSet);
+        } else if (validity === 2) {
+            cleanedDisabled.push(disabledRuleSet);
+            enabledSemgrepRuleSets = enabledSemgrepRuleSets.filter(item => item !== disabledRuleSet);
+        } else { //Remove disabled RuleSets that cannot be found
+            console.warn("Removing disabled RuleSet", disabledRuleSet, "from disabled.json since it could not be found in the files directory");
+        }
+    }
+
+    fs.writeFileSync('files/disabled.json', JSON.stringify(cleanedDisabled), 'utf8'); //Update disabled.json (if necessary)
+}
+
 //wrap in async since top level runs synchronously
 (async () => {
-await loadRegexRuleSet('rules.yml')
-loadSemgrepRuleSet('p/default')
+initScanner();
 
 console.time('test')
 scan("sample.js")
