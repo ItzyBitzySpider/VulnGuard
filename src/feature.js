@@ -15,7 +15,7 @@
  * Callback for the security checks to be run on the code
  * @callback checker
  * @param {string} fileUri
- * @returns {error | undefined} error
+ * @returns {error[] | undefined} error
  */
 
 const { getFeatures } = require("./settings");

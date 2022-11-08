@@ -16,7 +16,7 @@ async function activate(context) {
 
   const semgrepServer = await semgrep.findSemgrep(context);
   if (!semgrepServer && getFeatures(context)["semgrep"])
-    setFeature(context, semgrep, false);
+    setFeature(context, "semgrep", false);
 
   setFeatureContext(context);
 
@@ -72,8 +72,8 @@ async function activate(context) {
                 start: tmpVar * 5,
                 end: (tmpVar + 1) * 5 - 2,
               },
-              severity: "WARN",
-              message: "Regex Warn Caught",
+              severity: "INFO",
+              message: "Regex Info Caught",
             };
         }
       },
@@ -109,11 +109,14 @@ async function activate(context) {
     null,
     context.subscriptions
   );
-  //Change tab
+  // Change tab
   vscode.window.onDidChangeActiveTextEditor(
     (editor) => diagnostics.handleChangeActiveEditor(editor, vulnDiagnostics),
     null,
     context.subscriptions
+  );
+  vscode.workspace.onDidCloseTextDocument((document) =>
+    diagnostics.handleDocumentClose(document, vulnDiagnostics)
   );
   // TODO handle config change
   // vscode.workspace.onDidChangeConfiguration(
@@ -135,9 +138,6 @@ async function activate(context) {
   context.subscriptions.push(
     vscode.commands.registerCommand("vulnguard.dashboard", () =>
       createWebview(context)
-    ),
-    vscode.commands.registerCommand("vulnguard.fixvuln", () =>
-      console.log("FIX VULN")
     ),
     //onSave
     watcher.onDidChange((uri) => {
