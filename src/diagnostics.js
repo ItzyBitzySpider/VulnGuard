@@ -20,33 +20,47 @@ function clearDiagnostics(vulnDiagnostics) {
 /**
  *
  * @param {vscode.DiagnosticCollection} vulnDiagnostics
+ * @param {vscode.TextEditor[]} editors
+ * @param {vscode.TextEditor} active
  */
-function updateDiagnostics(vulnDiagnostics) {
-  if (!activeEditor || !activeEditor.document) return;
+function initWindowDiagnostics(vulnDiagnostics, editors, active) {
+  activeEditor = active;
+  updateDiagnostics(vulnDiagnostics, editors);
+}
 
-  const storedVulns = getVulns();
-  if (!storedVulns.has(activeEditor.document.uri.fsPath)) return;
-  const docVulns = storedVulns.get(activeEditor.document.uri.fsPath);
-  const diagnostics = docVulns.map((vuln) => {
-    let range = undefined;
-    if (vuln.range) {
-      range = new vscode.Range(
-        activeEditor.document.positionAt(vuln.range.start),
-        activeEditor.document.positionAt(vuln.range.end)
-      );
-    } else {
-      const line = activeEditor.document.lineAt(vuln.line_no).range;
-      range = new vscode.Range(line.start, line.end);
-    }
-    return {
-      severity: SEVERITY[vuln.severity],
-      range: range,
-      message: vuln.message,
-      source: "VulnGuard",
-      tags: vuln.fix ? [FIX_VULN_CODE] : undefined,
-    };
+/**
+ *
+ * @param {vscode.DiagnosticCollection} vulnDiagnostics
+ * @param {vscode.TextEditor[]} editors
+ * @returns
+ */
+function updateDiagnostics(vulnDiagnostics, editors) {
+  if (!editors) return;
+  editors.forEach((editor) => {
+    const storedVulns = getVulns();
+    if (!storedVulns.has(editor.document.uri.fsPath)) return;
+    const docVulns = storedVulns.get(editor.document.uri.fsPath);
+    const diagnostics = docVulns.map((vuln) => {
+      let range = undefined;
+      if (vuln.range) {
+        range = new vscode.Range(
+          editor.document.positionAt(vuln.range.start),
+          editor.document.positionAt(vuln.range.end)
+        );
+      } else {
+        const line = editor.document.lineAt(vuln.line_no).range;
+        range = new vscode.Range(line.start, line.end);
+      }
+      return {
+        severity: SEVERITY[vuln.severity],
+        range: range,
+        message: vuln.message,
+        source: "VulnGuard",
+        tags: vuln.fix ? [FIX_VULN_CODE] : undefined,
+      };
+    });
+    vulnDiagnostics.set(editor.document.uri, diagnostics);
   });
-  vulnDiagnostics.set(activeEditor.document.uri, diagnostics);
 }
 
 /**
@@ -55,17 +69,17 @@ function updateDiagnostics(vulnDiagnostics) {
  */
 function handleChangeActiveEditor(editor, vulnDiagnostics) {
   activeEditor = editor;
-  if (editor) updateDiagnostics(vulnDiagnostics);
+  if (editor) updateDiagnostics(vulnDiagnostics, [editor]);
   else clearDiagnostics(vulnDiagnostics);
 }
 
 /**
- * @param {vscode.TextDocumentChangeEvent} event
+ * @param {vscode.TextDocument} document
  * @param {vscode.DiagnosticCollection} vulnDiagnostics
  */
-function handleActiveEditorTextChange(event, vulnDiagnostics) {
-  if (activeEditor && event.document === activeEditor.document) {
-    updateDiagnostics();
+function handleActiveEditorTextChange(document, vulnDiagnostics) {
+  if (activeEditor && document === activeEditor.document) {
+    updateDiagnostics(vulnDiagnostics, [activeEditor]);
   } else clearDiagnostics(vulnDiagnostics);
 }
 
@@ -77,16 +91,20 @@ function handleDocumentClose(document, vulnDiagnostics) {
   vulnDiagnostics.delete(document.uri);
 }
 
-// TODO Config Change
-// function handleChangeConfig() {
-// const settings = vscode.workspace.getConfiguration("vulnguard");
-// if (!settings.get('isEnable')) return;
-//       init(settings);
-//       triggerUpdateDecorations();
-// }
+/**
+ *
+ * @param {vscode.Uri} uri
+ * @param {vscode.DiagnosticCollection} vulnDiagnostics
+ */
+function handleFileDelete(uri, vulnDiagnostics) {
+  if (uri.scheme !== "file") return;
+  vulnDiagnostics.delete(uri);
+}
 
 module.exports = {
+  initWindowDiagnostics,
   handleActiveEditorTextChange,
   handleChangeActiveEditor,
   handleDocumentClose,
+  handleFileDelete,
 };

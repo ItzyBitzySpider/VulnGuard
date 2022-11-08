@@ -6,7 +6,10 @@ const { Feature, setFeatureContext, Rule } = require("./feature");
 const Global = require("./globals");
 const { FixVulnCodeActionProvider } = require("./codeaction");
 const { setFeature, getFeatures } = require("./settings");
-const { scanWorkspace } = require("./scanTrigger");
+const { scanWorkspace, scanFile, renameVulns } = require("./scanTrigger");
+
+//TODO interrupt scan process
+//TODO webview read for stats; Disable tick
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -43,6 +46,7 @@ async function activate(context) {
       "regex",
       "Regex",
       (file) => {
+        if (tmpVar > 11) tmpVar = 0;
         switch (tmpVar++ % 4) {
           case 0:
             return;
@@ -60,7 +64,7 @@ async function activate(context) {
           case 2:
             return {
               id: "id2",
-              line_no: tmpVar * 3,
+              line_no: tmpVar * 2,
               fix: "<some random fixed code>",
               severity: "WARN",
               message: "Regex Warn Caught",
@@ -92,20 +96,39 @@ async function activate(context) {
     new FixVulnCodeActionProvider()
   );
 
-  scanWorkspace(context);
+  scanWorkspace(context).then(() =>
+    diagnostics.initWindowDiagnostics(
+      vulnDiagnostics,
+      vscode.window.visibleTextEditors,
+      vscode.window.activeTextEditor
+    )
+  );
 
   //onSave active document
-  vscode.workspace.onDidSaveTextDocument(
-    (event) => {
-      if (event.uri.scheme !== "file") return;
-      console.log(event.uri);
-    },
-    null,
-    context.subscriptions
-  );
+  // vscode.workspace.onDidSaveTextDocument(
+  //   (event) => {
+  //     if (event.uri.scheme !== "file") return;
+  //     console.log(event.uri);
+  //   },
+  //   null,
+  //   context.subscriptions
+  // );
+
   //onEdit
   vscode.workspace.onDidChangeTextDocument(
-    (event) => diagnostics.handleActiveEditorTextChange(event, vulnDiagnostics),
+    (event) => {
+      console.log("TT");
+      if (changeTimer) clearTimeout(changeTimer);
+      changeTimer = setTimeout(() => {
+        console.log("Scanning");
+        scanFile(event.document.uri.fsPath).then(() =>
+          diagnostics.handleActiveEditorTextChange(
+            event.document,
+            vulnDiagnostics
+          )
+        );
+      }, 1500);
+    },
     null,
     context.subscriptions
   );
@@ -115,45 +138,36 @@ async function activate(context) {
     null,
     context.subscriptions
   );
-  vscode.workspace.onDidCloseTextDocument((document) =>
-    diagnostics.handleDocumentClose(document, vulnDiagnostics)
+  vscode.workspace.onDidCloseTextDocument(
+    (document) => diagnostics.handleDocumentClose(document, vulnDiagnostics),
+    null,
+    context.subscriptions
   );
-  // TODO handle config change
-  // vscode.workspace.onDidChangeConfiguration(
-  //   () => {
-  // settings = workspace.getConfiguration('todohighlight');
+  vscode.workspace.onDidRenameFiles(
+    (event) => {
+      event.files.forEach((f) => {
+        if (f.oldUri.scheme === "file")
+          renameVulns(f.oldUri.fsPath, f.newUri.fsPath);
+      });
+    },
+    null,
+    context.subscriptions
+  );
 
-  // //NOTE: if disabled, do not re-initialize the data or we will not be able to clear the style immediately via 'toggle highlight' command
-  // if (!settings.get('isEnable')) return;
-
-  // init(settings);
-  // triggerUpdateDecorations();
-
-  //     console.log("HERE3");
-  //   },
-  //   null,
-  //   context.subscriptions
-  // );
-
+  let changeTimer;
   context.subscriptions.push(
     vscode.commands.registerCommand("vulnguard.dashboard", () =>
       createWebview(context)
     ),
-    //onSave
-    watcher.onDidChange((uri) => {
-      if (uri.scheme !== "file") return;
-      console.log(uri);
-    }),
     //onCreate
     watcher.onDidCreate((uri) => {
       if (uri.scheme !== "file") return;
-      console.log(uri);
+      scanFile(uri.fsPath);
     }),
     //onDelete
-    watcher.onDidDelete((uri) => {
-      if (uri.scheme !== "file") return;
-      console.log(uri);
-    }),
+    watcher.onDidDelete((uri) =>
+      diagnostics.handleFileDelete(uri, vulnDiagnostics)
+    ),
     vulnDiagnostics,
     vulnCodeActions
   );
