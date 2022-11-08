@@ -6,7 +6,8 @@ const { Feature, setFeatureContext, Rule } = require("./feature");
 const Global = require("./globals");
 const { FixVulnCodeActionProvider } = require("./codeaction");
 const { setFeature, getFeatures } = require("./settings");
-const { scanWorkspace, scanFile, renameVulns } = require("./scanTrigger");
+const { scanWorkspace, scanFile } = require("./scanTrigger");
+const { renameVulns, deleteVulns } = require("./vuln");
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -144,8 +145,9 @@ async function activate(context) {
   vscode.workspace.onDidRenameFiles(
     (event) => {
       event.files.forEach((f) => {
-        if (f.oldUri.scheme === "file")
+        if (f.oldUri.scheme === "file") {
           renameVulns(f.oldUri.fsPath, f.newUri.fsPath);
+        }
       });
     },
     null,
@@ -154,10 +156,7 @@ async function activate(context) {
   //onDelete
   vscode.workspace.onDidDeleteFiles(
     (event) => {
-      event.files.forEach((uri) => {
-        if (uri.scheme === "file")
-          diagnostics.handleFileDelete(uri, vulnDiagnostics);
-      });
+      event.files.forEach((uri) => deleteVulns(uri));
     },
     null,
     context.subscriptions

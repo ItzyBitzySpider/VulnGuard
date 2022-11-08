@@ -1,7 +1,6 @@
 const vscode = require("vscode");
-const path = require("path");
 const { FIX_VULN_CODE } = require("./globals");
-const { getVulns } = require("./scanTrigger");
+const { getVulns } = require("./vuln");
 
 let activeEditor = undefined;
 
@@ -92,26 +91,9 @@ function handleDocumentClose(document, vulnDiagnostics) {
   vulnDiagnostics.delete(document.uri);
 }
 
-/**
- *
- * @param {vscode.Uri} uri
- * @param {vscode.DiagnosticCollection} vulnDiagnostics
- */
-function handleFileDelete(uri, vulnDiagnostics) {
-  if (uri.scheme !== "file") return;
-  if (uri.fsPath.endsWith(".js")) vulnDiagnostics.delete(uri);
-  else {
-    vulnDiagnostics.forEach((vulnUri) => {
-      if (vulnUri.fsPath.startsWith(uri.fsPath + path.sep))
-        vulnDiagnostics.delete(vulnUri);
-    });
-  }
-}
-
 module.exports = {
   initWindowDiagnostics,
   handleActiveEditorTextChange,
   handleChangeActiveEditor,
   handleDocumentClose,
-  handleFileDelete,
 };

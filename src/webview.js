@@ -8,7 +8,7 @@ const {
   deleteIgnoredRegex,
 } = require("./settings");
 const Global = require("./globals");
-const { getVulns } = require("./scanTrigger");
+const { getVulns } = require("./vuln");
 
 let panel = undefined;
 let vulnguardLogo = undefined;
