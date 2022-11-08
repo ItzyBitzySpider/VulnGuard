@@ -1,15 +1,12 @@
 const vscode = require("vscode");
 const diagnostics = require("./diagnostics");
 const semgrep = require("./semgrep");
-const { createWebview } = require("./webview");
+const { createWebview, updateWebview } = require("./webview");
 const { Feature, setFeatureContext, Rule } = require("./feature");
 const Global = require("./globals");
 const { FixVulnCodeActionProvider } = require("./codeaction");
 const { setFeature, getFeatures } = require("./settings");
 const { scanWorkspace, scanFile, renameVulns } = require("./scanTrigger");
-
-//TODO interrupt scan process
-//TODO webview read for stats; Disable tick
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -96,13 +93,14 @@ async function activate(context) {
     new FixVulnCodeActionProvider()
   );
 
-  scanWorkspace(context).then(() =>
+  scanWorkspace(context).then(() => {
     diagnostics.initWindowDiagnostics(
       vulnDiagnostics,
       vscode.window.visibleTextEditors,
       vscode.window.activeTextEditor
-    )
-  );
+    );
+    updateWebview(context);
+  });
 
   //onSave active document
   // vscode.workspace.onDidSaveTextDocument(
@@ -115,18 +113,18 @@ async function activate(context) {
   // );
 
   //onEdit
+  let changeTimer;
   vscode.workspace.onDidChangeTextDocument(
     (event) => {
-      console.log("TT");
       if (changeTimer) clearTimeout(changeTimer);
       changeTimer = setTimeout(() => {
-        console.log("Scanning");
-        scanFile(event.document.uri.fsPath).then(() =>
+        scanFile(event.document.uri.fsPath).then(() => {
           diagnostics.handleActiveEditorTextChange(
             event.document,
             vulnDiagnostics
-          )
-        );
+          );
+          updateWebview(context);
+        });
       }, 1500);
     },
     null,
@@ -153,8 +151,18 @@ async function activate(context) {
     null,
     context.subscriptions
   );
+  //onDelete
+  vscode.workspace.onDidDeleteFiles(
+    (event) => {
+      event.files.forEach((uri) => {
+        if (uri.scheme === "file")
+          diagnostics.handleFileDelete(uri, vulnDiagnostics);
+      });
+    },
+    null,
+    context.subscriptions
+  );
 
-  let changeTimer;
   context.subscriptions.push(
     vscode.commands.registerCommand("vulnguard.dashboard", () =>
       createWebview(context)
@@ -162,12 +170,8 @@ async function activate(context) {
     //onCreate
     watcher.onDidCreate((uri) => {
       if (uri.scheme !== "file") return;
-      scanFile(uri.fsPath);
+      scanFile(uri.fsPath).then(() => updateWebview(context));
     }),
-    //onDelete
-    watcher.onDidDelete((uri) =>
-      diagnostics.handleFileDelete(uri, vulnDiagnostics)
-    ),
     vulnDiagnostics,
     vulnCodeActions
   );

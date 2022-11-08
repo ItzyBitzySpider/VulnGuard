@@ -8,6 +8,7 @@ const {
   deleteIgnoredRegex,
 } = require("./settings");
 const Global = require("./globals");
+const { getVulns } = require("./scanTrigger");
 
 let panel = undefined;
 let vulnguardLogo = undefined;
@@ -110,8 +111,28 @@ function createWebview(context) {
  * @param {vscode.ExtensionContext} context
  */
 function updateWebview(context) {
+  if (!panel) return;
+
   const featureList = Global.getFeatureList();
   const ignoredRegex = getIgnoredRegex(context);
+  let error = 0,
+    warning = 0,
+    alert = 0;
+  getVulns().forEach((v) => {
+    v.forEach((vuln) => {
+      switch (vuln.severity) {
+        case "ERROR":
+          error++;
+          return;
+        case "WARN":
+          warning++;
+          return;
+        case "INFO":
+          alert++;
+          return;
+      }
+    });
+  });
 
   panel.webview.html = `<html lang="en">
   <head>
@@ -164,15 +185,15 @@ function updateWebview(context) {
       </div>
       <div style="flex: 1"></div>
       <div class="col count">
-        <h1>5</h1>
+        <h1>${error}</h1>
         <h3>Errors</h3>
       </div>
       <div class="col count">
-        <h1>52</h1>
+        <h1>${warning}</h1>
         <h3>Warnings</h3>
       </div>
       <div class="col count">
-        <h1>515</h1>
+        <h1>${alert}</h1>
         <h3>Alerts</h3>
       </div>
       <div style="width:50px"></div>

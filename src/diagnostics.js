@@ -1,4 +1,5 @@
 const vscode = require("vscode");
+const path = require("path");
 const { FIX_VULN_CODE } = require("./globals");
 const { getVulns } = require("./scanTrigger");
 
@@ -98,7 +99,13 @@ function handleDocumentClose(document, vulnDiagnostics) {
  */
 function handleFileDelete(uri, vulnDiagnostics) {
   if (uri.scheme !== "file") return;
-  vulnDiagnostics.delete(uri);
+  if (uri.fsPath.endsWith(".js")) vulnDiagnostics.delete(uri);
+  else {
+    vulnDiagnostics.forEach((vulnUri) => {
+      if (vulnUri.fsPath.startsWith(uri.fsPath + path.sep))
+        vulnDiagnostics.delete(vulnUri);
+    });
+  }
 }
 
 module.exports = {
