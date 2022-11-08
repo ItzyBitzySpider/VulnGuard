@@ -5,6 +5,7 @@ const fs = require("fs");
 const readline = require("readline");
 const yaml = require('yaml');
 const execFileAsync = promisify(execFile);
+var { regexRuleSets, semgrepRuleSets, enabledRegexRuleSets, enabledSemgrepRuleSets } = require("./globals");
 
 //SEMGREP FUNCTION
 export async function semgrepRuleSetsScan(configs, path, exclude=null) {
@@ -146,12 +147,6 @@ function getFilesRecursively(top_dir) {
     explore(top_dir);
     return files;
 }
-
-var regexRuleSets = [];
-var semgrepRuleSets = [];
-
-var enabledRegexRuleSets = [];
-var enabledSemgrepRuleSets = [];
 
 //Rulesets loading and validation functions
 function validateRegexTree(node) {
@@ -333,6 +328,8 @@ export async function initScanner() { //TODO: Figure out proper subdirectory nam
     }
 
     fs.writeFileSync('files/disabled.json', JSON.stringify(cleanedDisabled), 'utf8'); //Update disabled.json (if necessary)
+
+    return regexRuleSets, enabledRegexRuleSets, semgrepRuleSets, enabledSemgrepRuleSets;
 }
 
 export function disableRuleSet(path) {
