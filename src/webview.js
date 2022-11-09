@@ -10,6 +10,7 @@ const {
 const Global = require("./globals");
 const { getVulns } = require("./vuln");
 const { getTitleFromPath, Feature } = require("./feature");
+const { enableRuleSet, disableRuleSet } = require("./scanner");
 
 let panel = undefined;
 let vulnguardLogo = undefined;
@@ -63,6 +64,7 @@ function createWebview(context) {
           return;
 
         case "button":
+          //Ignored files related commands
           if (message.id === "ignore") {
             if (message.rule === "add")
               vscode.window
@@ -97,6 +99,13 @@ function createWebview(context) {
                   `VulnGuard: An error occurred when deleting ignored directory at ${idx}`
                 );
             }
+          } else {
+            //Enabling/disabling rules
+            console.log(message);
+            message.value === "true"
+              ? enableRuleSet(context, message.rule)
+              : disableRuleSet(context, message.rule);
+            updateWebview(context);
           }
           return;
       }
@@ -135,10 +144,9 @@ function getFeatureEntries(feature) {
   }
   <div class="entries">
     <div class="row">
-      <p style="flex: 1">5/15 ${feature.title} Rules Enabled</p>
-      <button id="${feature.id}__button__reset" type="button">
-        ${Icons.redo}
-      </button>
+      <p style="flex: 1">${rulesetData.enabled} of ${rulesetData.total} ${
+    feature.title
+  } Rule(s) Enabled</p>
     </div>
     ${entries}
   </div>

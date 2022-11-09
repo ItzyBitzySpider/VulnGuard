@@ -449,7 +449,7 @@ function disableRuleSet(context, path) {
   }
 
   disabled.push(path);
-  setDisabledRules(disabled); //Update disabled.json
+  setDisabledRules(context, disabled); //Update disabled.json
 }
 
 function enableRuleSet(context, path) {
@@ -474,7 +474,7 @@ function enableRuleSet(context, path) {
   }
 
   disabled = disabled.filter((item) => item !== path);
-  setDisabledRules(disabled); //Update disabled.json
+  setDisabledRules(context, disabled); //Update disabled.json
 }
 
 //test function to be deleted

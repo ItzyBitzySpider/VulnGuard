@@ -30,9 +30,7 @@ function setFeatureContext(ctx) {
 
 class Feature {
   /**
-   *
-   * Callback to get the rule state from global
-   * @callback rulesetParamGetter
+   * @callback getRulesetParam
    * @returns {rulesetParam}
    *
    * @typedef {rulesetParam}
@@ -42,7 +40,7 @@ class Feature {
    * @param {string} id - Lowercase string identifier e.g. semgrep
    * @param {string} title - Feature title to be displayed e.g. "SemGrep"
    * @param {scanForVulns} scanforVulns - The callback that flags code errors\
-   * @param {rulesetParamGetter} getRuleParams - Get 2 lists of rulesets (enabled and all)
+   * @param {getRulesetParam} getRuleParams - Get 2 lists of rulesets (enabled and all)
    */
   constructor(id, title, scanforVulns, getRuleParams) {
     this.id = id;
