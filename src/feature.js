@@ -1,8 +1,9 @@
+const path = require("path");
+
 /**
  * @typedef {Object} range
  * @property {number} start - Error start idx
  * @property {number} end - Error end idx
- *
  *
  * @typedef {Object} error
  * @property {string} id
@@ -13,9 +14,10 @@
  * @property {string} message - Error message
  *
  * Callback for the security checks to be run on the code
- * @callback checker
+ * @callback scanForVulns
  * @param {string} fileUri
  * @returns {error[] | Promise<error[]> | undefined} error
+ *
  */
 
 const { getFeatures } = require("./settings");
@@ -28,20 +30,25 @@ function setFeatureContext(ctx) {
 
 class Feature {
   /**
-   * @typedef {Object} RuleSet
-   * @property {string} path
-   * @property {object[]} ruleSet
+   *
+   * Callback to get the rule state from global
+   * @callback rulesetParamGetter
+   * @returns {rulesetParam}
+   *
+   * @typedef {rulesetParam}
+   * @property {object[]} enabled
+   * @property {object[]} all
    *
    * @param {string} id - Lowercase string identifier e.g. semgrep
    * @param {string} title - Feature title to be displayed e.g. "SemGrep"
-   * @param {checker} checker - The callback that flags code errors\
-   * @param {RuleSet[]} rules - List of rulesets
+   * @param {scanForVulns} scanforVulns - The callback that flags code errors\
+   * @param {rulesetParamGetter} getRuleParams - Get 2 lists of rulesets (enabled and all)
    */
-  constructor(id, title, checker, rules) {
+  constructor(id, title, scanforVulns, getRuleParams) {
     this.id = id;
     this.title = title;
-    this.checker = checker;
-    this.rules = rules;
+    this.scanForVulns = scanforVulns;
+    this.getRuleParams = getRuleParams;
   }
 
   isEnabled() {
@@ -49,6 +56,46 @@ class Feature {
     if (enabled === undefined) return undefined;
     return enabled;
   }
+
+  /**
+   *
+   * @typedef {featureRulesetData}
+   * @property {number} total - Total number of rulesets
+   * @property {number} enabled - Total number of enabled rulesets
+   * @property {Map<string,boolean>} rulesets - Map of ruleset paths to enabled state
+   *
+   * @returns {featureRulesetData}
+   */
+  getRulesetData() {
+    const rulesets = this.getRuleParams();
+    const enabled = rulesets.enabled.map((r) => r.path);
+    const all = rulesets.all.map((r) => r.path);
+    const outputRulesets = new Map();
+    all.forEach((path) => outputRulesets.set(path, false));
+    enabled.forEach((path) => {
+      if (!outputRulesets.has(path))
+        console.warn("Key found in enabled but not in all:", path);
+      outputRulesets.set(path, true);
+    });
+    return {
+      enabled: enabled.length,
+      total: all.length,
+      rulesets: outputRulesets,
+    };
+  }
 }
 
-module.exports = { Feature, setFeatureContext };
+/**
+ *
+ * @param {string} filePath
+ * @returns {string}
+ */
+function getTitleFromPath(filePath) {
+  return path
+    .basename(filePath)
+    .replace(new RegExp(path.extname(filePath) + "$"), "")
+    .replaceAll(/[_-]/g, " ") //Replace hyphen and underscore with space
+    .replaceAll(/(\b[a-z](?!\s))/g, (x) => x.toUpperCase()); //Capitalize first letter of each word
+}
+
+module.exports = { Feature, setFeatureContext, getTitleFromPath };

@@ -35,7 +35,10 @@ async function activate(context) {
         const x = await regexRuleSetsScan(Global.enabledRegexRuleSets, file);
         return x;
       },
-      Global.enabledRegexRuleSets
+      () => ({
+        enabled: Global.enabledRegexRuleSets,
+        all: Global.regexRuleSets,
+      })
     )
   );
   featureList.push(
@@ -50,7 +53,13 @@ async function activate(context) {
           message: "SemGrep Rule Caught",
         };
       },
-      [{ id: "sr1", title: "tt1", message: "test trr", severity: "ERROR" }]
+      () => ({
+        enabled: [{ path: "sr1", ruleSet: [] }],
+        all: [
+          { path: "sr1", ruleSet: [] },
+          { path: "sr2", ruleSet: [] },
+        ],
+      })
     )
   );
   featureList.push(
@@ -93,11 +102,17 @@ async function activate(context) {
             };
         }
       },
-      [
-        { id: "rr1", title: "t1", message: "test rr", severity: "WARNING" },
-        { id: "rr2", title: "t2", message: "test rr", severity: "INFO" },
-        { id: "rr3", title: "t3", message: "test rr", severity: "ERROR" },
-      ]
+      () => ({
+        enabled: [
+          { path: "rr1", ruleSet: [] },
+          { path: "rr3", ruleSet: [] },
+        ],
+        all: [
+          { path: "rr1", ruleSet: [] },
+          { path: "rr2", ruleSet: [] },
+          { path: "rr3", ruleSet: [] },
+        ],
+      })
     )
   );
 
@@ -108,6 +123,7 @@ async function activate(context) {
     new FixVulnCodeActionProvider()
   );
 
+  // TODO possibly scan entire workspace on start?
   // scanWorkspace(context).then(() => {
   //   diagnostics.initWindowDiagnostics(
   //     vulnDiagnostics,
@@ -156,7 +172,6 @@ async function activate(context) {
     null,
     context.subscriptions
   );
-  //TODO rename handling
   vscode.workspace.onDidRenameFiles(
     (event) => {
       event.files.forEach((f) => {

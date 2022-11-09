@@ -16,7 +16,7 @@ async function scanFile(path) {
   for (const feature of GLOBALS.getFeatureList()) {
     if (!feature.isEnabled()) continue;
 
-    const vuln = await feature.checker(path);
+    const vuln = await feature.scanForVulns(path);
     if (vuln) tmpVulnList.push(...vuln);
   }
   const { getVulns } = require("./vuln");

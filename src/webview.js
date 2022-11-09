@@ -9,6 +9,7 @@ const {
 } = require("./settings");
 const Global = require("./globals");
 const { getVulns } = require("./vuln");
+const { getTitleFromPath, Feature } = require("./feature");
 
 let panel = undefined;
 let vulnguardLogo = undefined;
@@ -104,6 +105,44 @@ function createWebview(context) {
     context.subscriptions
   );
   updateWebview(context);
+}
+
+/**
+ *
+ * @param {Feature} feature
+ * @returns {string}
+ */
+function getFeatureEntries(feature) {
+  const rulesetData = feature.getRulesetData();
+  let entries = "";
+  rulesetData.rulesets.forEach((enabled, path) => {
+    entries += `<div class="row">
+    <p class="${enabled ? "" : "disabled"}" style="flex: 1">${getTitleFromPath(
+      path
+    )}</p>
+    <button id="${
+      feature.id
+    }__button__${path}__button__${!enabled}" type="button">
+      ${enabled ? Icons.disable : Icons.tick}
+    </button>
+  </div>`;
+  });
+  return `<h2>${feature.title}</h2>
+  ${
+    feature.id === "semgrep" && (isWindows || !Global.semgrepServer)
+      ? `<p style="margin-top:-10px;margin-bottom:15px;color:#71717a">${feature.title} disabled on Windows</p>`
+      : ""
+  }
+  <div class="entries">
+    <div class="row">
+      <p style="flex: 1">5/15 ${feature.title} Rules Enabled</p>
+      <button id="${feature.id}__button__reset" type="button">
+        ${Icons.redo}
+      </button>
+    </div>
+    ${entries}
+  </div>
+  `;
 }
 
 /**
@@ -254,42 +293,7 @@ function updateWebview(context) {
           ""
         )}
     </div>
-      ${featureList.reduce(
-        (prev, curr) =>
-          prev +
-          `
-      <h2>${curr.title}</h2>
-      ${
-        curr.id === "semgrep" && (isWindows || !Global.semgrepServer)
-          ? `<p style="margin-top:-10px;margin-bottom:15px;color:#71717a">${curr.title} disabled on Windows</p>`
-          : ""
-      }
-      <div class="entries">
-        <div class="row">
-          <p style="flex: 1">5/15 ${curr.title} Rules Enabled</p>
-          <button id="${curr.id}__button__reset" type="button">
-            ${Icons.redo}
-          </button>
-        </div>
-        ${curr.rules.reduce(
-          (prevRule, currRule) =>
-            prevRule +
-            `<div class="row">
-        <p class="${currRule.isEnabled() ? "" : "disabled"}" style="flex: 1">${
-              currRule.title
-            }</p>
-        <button id="${curr.id}__button__${
-              currRule.id
-            }__button__${!currRule.isEnabled()}" type="button">
-          ${currRule.isEnabled() ? Icons.disable : Icons.tick}
-        </button>
-      </div>`,
-          ""
-        )}
-      </div>
-      `,
-        ""
-      )}
+      ${featureList.reduce((prev, curr) => prev + getFeatureEntries(curr), "")}
     </div>
   </body>
 </html>
