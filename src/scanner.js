@@ -225,7 +225,19 @@ function validateRegexTree(node) {
   }
 }
 
-async function loadRegexRuleSet(path) {
+function loadRegexRuleSet(path) { //Wrap around function _loadRegexRuleSet() to catch exceptions thrown
+  try {
+    var tmp = _loadRegexRuleSet(path);
+    regexRuleSets.push(tmp);
+    enabledRegexRuleSets.push(tmp);
+  } catch (error) {
+    console.error("Unable to load Regex RuleSet", path, "due to error:", error);
+    let tmp = { path: path }; //Only store path
+    regexRuleSets.push(tmp);
+  }
+}
+
+function _loadRegexRuleSet(path) {
   var regexRules = [];
   const cfg = fs.readFileSync(path, "utf8");
   const dat = yaml.parse(cfg);
@@ -317,41 +329,13 @@ async function loadRegexRuleSet(path) {
     regexRules.push(rule);
   }
 
-  if (semgrepServer) {
-    //Use Semgrep to scan Regex rules to check for duplicate IDs, etc.
-    await semgrepRuleSetsScan(["p/semgrep-rule-lints"], path, [
-      "yaml.semgrep.missing-language-field.missing-language-field",
-      "yaml.semgrep.duplicate-pattern.duplicate-pattern",
-      "yaml.semgrep.unsatisfiable.unsatisfiable-rule",
-    ])
-      .then((results) => {
-        //Remove incompatible rules
-        for (const result of results) {
-          if (result.severity === "ERROR") {
-            throw result;
-          } else {
-            console.log(result);
-          }
-        }
-        var tmp = { path: path, ruleSet: regexRules }; //Only add current RuleSet if it has no errors
-        regexRuleSets.push(tmp);
-        enabledRegexRuleSets.push(tmp);
-      })
-      .catch((error) => {
-        console.error(error);
-        throw "Error parsing regex RuleSet";
-      });
-  } else {
-    let tmp = { path: path, ruleSet: regexRules };
-    regexRuleSets.push(tmp);
-    enabledRegexRuleSets.push(tmp);
-  }
+  return { path: path, ruleSet: regexRules };
 }
 
-async function loadRegexRuleSets(dir) {
+function loadRegexRuleSets(dir) {
   var files = getFilesRecursively(dir);
   for (const file of files) {
-    await loadRegexRuleSet(file);
+    loadRegexRuleSet(file);
   }
 }
 
@@ -383,11 +367,11 @@ function validRuleSet(path) {
 }
 
 //Initialize and abstract away backend for frontend
-async function initScanner(context) {
+function initScanner(context) {
   //TODO: Figure out proper subdirectory names
   var disabled = getDisabledRules(context); //Load disabled.json into memory
 
-  await loadRegexRuleSets(
+  loadRegexRuleSets(
     path.join(context.extensionPath, "files", "regex_rules")
   ); //Load all the rules into memory
 
@@ -427,6 +411,12 @@ async function initScanner(context) {
 }
 
 function disableRuleSet(context, path) {
+  var disabled = getDisabledRules(context); //Load disabled.json into memory
+  if (disabled.includes(path)) {
+    console.error("Unable to disable RuleSet " + path + " since it was already disabled");
+    return;
+  }
+
   const validity = validRuleSet(path);
   if (validity === 1) {
     enabledRegexRuleSets = enabledRegexRuleSets.filter(
@@ -437,15 +427,8 @@ function disableRuleSet(context, path) {
       (item) => item !== path
     );
   } else {
-    throw "Unable to disable RuleSet " + path + " since it does not exist";
-  }
-
-  var disabled = getDisabledRules(context); //Load disabled.json into memory
-
-  if (disabled.includes(path)) {
-    throw (
-      "Unable to disable RuleSet " + path + " since it was already disabled"
-    );
+    console.error("Unable to disable RuleSet " + path + " since it does not exist");
+    return;
   }
 
   disabled.push(path);
@@ -454,23 +437,39 @@ function disableRuleSet(context, path) {
 
 function enableRuleSet(context, path) {
   var disabled = getDisabledRules(context); //Load disabled.json into memory
-
   if (!disabled.includes(path)) {
-    throw "Unable to re-enable RuleSet " + path + " since it was not disabled";
+    console.error("Unable to re-enable RuleSet " + path + " since it was not disabled");
+    return;
   }
 
   const validity = validRuleSet(path);
   if (validity === 1) {
     for (const regexRuleSet of regexRuleSets) {
       if (regexRuleSet.path === path) {
-        enabledRegexRuleSets.push(regexRuleSet);
+        let tmp;
+        try {
+          tmp = _loadRegexRuleSet(path);
+        } catch (error) {
+          console.error("Unable to re-enable Regex RuleSet " + path + " due to error: " + error);
+          return;
+        }
+        
+        //Remove original regexRuleSet (since it may have no RuleSet data)
+        regexRuleSets = regexRuleSets.filter(
+          (item) => item.path !== path
+        );
+
+        //Add new updated Regex RuleSet
+        regexRuleSets.push(tmp);
+        enabledRegexRuleSets.push(tmp);
         break;
       }
     }
   } else if (validity === 2) {
-    enabledSemgrepRuleSets.push(path);
+    enabledSemgrepRuleSets.push(path); //TODO: Do proper data validation?
   } else {
-    throw "Unable to re-enable RuleSet " + path + " since it does not exist";
+    console.error("Unable to re-enable RuleSet " + path + " since it does not exist");
+    return;
   }
 
   disabled = disabled.filter((item) => item !== path);
