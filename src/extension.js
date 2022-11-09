@@ -22,7 +22,7 @@ async function activate(context) {
   if (!Global.semgrepServer && getFeatures(context)["semgrep"])
     setFeature(context, "semgrep", false);
 
-  await initScanner(context);
+  initScanner(context);
   setFeatureContext(context);
 
   let tmpVar = 0;

@@ -225,7 +225,19 @@ function validateRegexTree(node) {
   }
 }
 
-function loadRegexRuleSet(path) {
+function loadRegexRuleSet(path) { //Wrap around function _loadRegexRuleSet() to catch exceptions thrown
+  try {
+    var tmp = _loadRegexRuleSet(path);
+    regexRuleSets.push(tmp);
+    enabledRegexRuleSets.push(tmp);
+  } catch (error) {
+    console.error("Unable to load Regex RuleSet", path, "due to error:", error);
+    let tmp = { path: path }; //Only store path
+    regexRuleSets.push(tmp);
+  }
+}
+
+function _loadRegexRuleSet(path) {
   var regexRules = [];
   const cfg = fs.readFileSync(path, "utf8");
   const dat = yaml.parse(cfg);
@@ -317,9 +329,7 @@ function loadRegexRuleSet(path) {
     regexRules.push(rule);
   }
 
-  let tmp = { path: path, ruleSet: regexRules };
-  regexRuleSets.push(tmp);
-  enabledRegexRuleSets.push(tmp);
+  return { path: path, ruleSet: regexRules };
 }
 
 function loadRegexRuleSets(dir) {
@@ -437,12 +447,25 @@ function enableRuleSet(context, path) {
   if (validity === 1) {
     for (const regexRuleSet of regexRuleSets) {
       if (regexRuleSet.path === path) {
-        enabledRegexRuleSets.push(regexRuleSet);
+        try {
+          var tmp = _loadRegexRuleSet(path);
+
+          //Remove original regexRuleSet (since it may have no ruleSet data)
+          regexRuleSets = regexRuleSets.filter(
+            (item) => item.path !== path
+          );
+
+          //Add new updated regexRuleSet
+          regexRuleSets.push(tmp);
+          enabledRegexRuleSets.push(tmp);
+        } catch (error) {
+          throw "Unable to re-enable Regex RuleSet " + path + " due to error: " + error;
+        }
         break;
       }
     }
   } else if (validity === 2) {
-    enabledSemgrepRuleSets.push(path);
+    enabledSemgrepRuleSets.push(path); //TODO: Do proper data validation?
   } else {
     throw "Unable to re-enable RuleSet " + path + " since it does not exist";
   }
