@@ -411,6 +411,12 @@ function initScanner(context) {
 }
 
 function disableRuleSet(context, path) {
+  var disabled = getDisabledRules(context); //Load disabled.json into memory
+  if (disabled.includes(path)) {
+    console.error("Unable to disable RuleSet " + path + " since it was already disabled");
+    return;
+  }
+
   const validity = validRuleSet(path);
   if (validity === 1) {
     enabledRegexRuleSets = enabledRegexRuleSets.filter(
@@ -421,15 +427,8 @@ function disableRuleSet(context, path) {
       (item) => item !== path
     );
   } else {
-    throw "Unable to disable RuleSet " + path + " since it does not exist";
-  }
-
-  var disabled = getDisabledRules(context); //Load disabled.json into memory
-
-  if (disabled.includes(path)) {
-    throw (
-      "Unable to disable RuleSet " + path + " since it was already disabled"
-    );
+    console.error("Unable to disable RuleSet " + path + " since it does not exist");
+    return;
   }
 
   disabled.push(path);
@@ -438,36 +437,39 @@ function disableRuleSet(context, path) {
 
 function enableRuleSet(context, path) {
   var disabled = getDisabledRules(context); //Load disabled.json into memory
-
   if (!disabled.includes(path)) {
-    throw "Unable to re-enable RuleSet " + path + " since it was not disabled";
+    console.error("Unable to re-enable RuleSet " + path + " since it was not disabled");
+    return;
   }
 
   const validity = validRuleSet(path);
   if (validity === 1) {
     for (const regexRuleSet of regexRuleSets) {
       if (regexRuleSet.path === path) {
+        let tmp;
         try {
-          var tmp = _loadRegexRuleSet(path);
-
-          //Remove original regexRuleSet (since it may have no ruleSet data)
-          regexRuleSets = regexRuleSets.filter(
-            (item) => item.path !== path
-          );
-
-          //Add new updated regexRuleSet
-          regexRuleSets.push(tmp);
-          enabledRegexRuleSets.push(tmp);
+          tmp = _loadRegexRuleSet(path);
         } catch (error) {
-          throw "Unable to re-enable Regex RuleSet " + path + " due to error: " + error;
+          console.error("Unable to re-enable Regex RuleSet " + path + " due to error: " + error);
+          return;
         }
+        
+        //Remove original regexRuleSet (since it may have no RuleSet data)
+        regexRuleSets = regexRuleSets.filter(
+          (item) => item.path !== path
+        );
+
+        //Add new updated Regex RuleSet
+        regexRuleSets.push(tmp);
+        enabledRegexRuleSets.push(tmp);
         break;
       }
     }
   } else if (validity === 2) {
     enabledSemgrepRuleSets.push(path); //TODO: Do proper data validation?
   } else {
-    throw "Unable to re-enable RuleSet " + path + " since it does not exist";
+    console.error("Unable to re-enable RuleSet " + path + " since it does not exist");
+    return;
   }
 
   disabled = disabled.filter((item) => item !== path);
