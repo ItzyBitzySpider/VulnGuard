@@ -1,0 +1,16 @@
+rules:
+  - id: test-regex-exp
+    message: 'simple regex expression'
+    severity: WARNING
+    regex: '\bdb.many\b'
+  - id: test-regex-or
+    message: 'regex OR expression'
+    severity: WARNING
+    regex:
+      - regex_or:
+        - regex: '\bdb.many\b'
+        - regex: '\bdb.one\b'
+
+
+       
+

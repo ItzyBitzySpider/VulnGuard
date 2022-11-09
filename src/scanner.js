@@ -6,13 +6,7 @@ const fs = require("fs");
 const readline = require("readline");
 const yaml = require("yaml");
 const execFileAsync = promisify(execFile);
-var {
-  regexRuleSets,
-  semgrepRuleSets,
-  enabledRegexRuleSets,
-  enabledSemgrepRuleSets,
-  semgrepServer, //Jon's paramto see if semgrepFound
-} = require("./globals");
+const Global = require("./globals");
 
 //SEMGREP FUNCTION
 async function semgrepRuleSetsScan(configs, path, exclude = null) {
@@ -159,8 +153,8 @@ function applyRegexCheck(node, parent_type, text) {
 //the function below may be deprecated soon
 function scan(path) {
   Promise.all([
-    semgrepRuleSetsScan(enabledSemgrepRuleSets, path),
-    regexRuleSetsScan(enabledRegexRuleSets, path),
+    semgrepRuleSetsScan(Global.enabledSemgrepRuleSets, path),
+    regexRuleSetsScan(Global.enabledRegexRuleSets, path),
   ]).then((values) => {
     console.log(values);
   });
@@ -228,12 +222,12 @@ function validateRegexTree(node) {
 function loadRegexRuleSet(path) { //Wrap around function _loadRegexRuleSet() to catch exceptions thrown
   try {
     var tmp = _loadRegexRuleSet(path);
-    regexRuleSets.push(tmp);
-    enabledRegexRuleSets.push(tmp);
+    Global.regexRuleSets.push(tmp);
+    Global.enabledRegexRuleSets.push(tmp);
   } catch (error) {
     console.error("Unable to load Regex RuleSet", path, "due to error:", error);
     let tmp = { path: path }; //Only store path
-    regexRuleSets.push(tmp);
+    Global.regexRuleSets.push(tmp);
   }
 }
 
@@ -341,8 +335,8 @@ function loadRegexRuleSets(dir) {
 
 function loadSemgrepRuleSet(path) {
   //TODO: Do proper data validation?
-  semgrepRuleSets.push(path);
-  enabledSemgrepRuleSets.push(path);
+  Global.semgrepRuleSets.push(path);
+  Global.enabledSemgrepRuleSets.push(path);
 }
 
 function loadSemgrepRuleSets(dir) {
@@ -353,12 +347,12 @@ function loadSemgrepRuleSets(dir) {
 }
 
 function validRuleSet(path) {
-  for (const regexRuleSet of regexRuleSets) {
+  for (const regexRuleSet of Global.regexRuleSets) {
     if (regexRuleSet.path === path) {
       return 1;
     }
   }
-  for (const semgrepRuleSet of semgrepRuleSets) {
+  for (const semgrepRuleSet of Global.semgrepRuleSets) {
     if (semgrepRuleSet === path) {
       return 2;
     }
@@ -375,7 +369,7 @@ function initScanner(context) {
     path.join(context.extensionPath, "files", "regex_rules")
   ); //Load all the rules into memory
 
-  if (semgrepServer) {
+  if (Global.semgrepServer) {
     loadSemgrepRuleSets(
       path.join(context.extensionPath, "files", "semgrep_rules")
     );
@@ -387,12 +381,12 @@ function initScanner(context) {
     const validity = validRuleSet(disabledRuleSet);
     if (validity === 1) {
       cleanedDisabled.push(disabledRuleSet);
-      enabledRegexRuleSets = enabledRegexRuleSets.filter(
+      Global.enabledRegexRuleSets = Global.enabledRegexRuleSets.filter(
         (item) => item.path !== disabledRuleSet
       );
     } else if (validity === 2) {
       cleanedDisabled.push(disabledRuleSet);
-      enabledSemgrepRuleSets = enabledSemgrepRuleSets.filter(
+      Global.enabledSemgrepRuleSets = Global.enabledSemgrepRuleSets.filter(
         (item) => item !== disabledRuleSet
       );
     } else {
@@ -405,9 +399,6 @@ function initScanner(context) {
     }
   }
   setDisabledRules(context, cleanedDisabled); //Update disabled.json (if necessary)
-  return (
-    regexRuleSets, enabledRegexRuleSets, semgrepRuleSets, enabledSemgrepRuleSets
-  );
 }
 
 function disableRuleSet(context, path) {
@@ -419,11 +410,11 @@ function disableRuleSet(context, path) {
 
   const validity = validRuleSet(path);
   if (validity === 1) {
-    enabledRegexRuleSets = enabledRegexRuleSets.filter(
+    Global.enabledRegexRuleSets = Global.enabledRegexRuleSets.filter(
       (item) => item.path !== path
     );
   } else if (validity === 2) {
-    enabledSemgrepRuleSets = enabledSemgrepRuleSets.filter(
+    Global.enabledSemgrepRuleSets = Global.enabledSemgrepRuleSets.filter(
       (item) => item !== path
     );
   } else {
@@ -455,18 +446,18 @@ function enableRuleSet(context, path) {
         }
         
         //Remove original regexRuleSet (since it may have no RuleSet data)
-        regexRuleSets = regexRuleSets.filter(
+        Global.regexRuleSets = Global.regexRuleSets.filter(
           (item) => item.path !== path
         );
 
         //Add new updated Regex RuleSet
-        regexRuleSets.push(tmp);
-        enabledRegexRuleSets.push(tmp);
+        Global.regexRuleSets.push(tmp);
+        Global.enabledRegexRuleSets.push(tmp);
         break;
       }
     }
   } else if (validity === 2) {
-    enabledSemgrepRuleSets.push(path); //TODO: Do proper data validation?
+    Global.enabledSemgrepRuleSets.push(path); //TODO: Do proper data validation?
   } else {
     console.error("Unable to re-enable RuleSet " + path + " since it does not exist");
     return;
