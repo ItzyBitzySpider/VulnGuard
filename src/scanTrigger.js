@@ -8,19 +8,17 @@ async function scanDirectory(context, directory) {
     path.join(directory, "**/*.js"),
     `{${getIgnoredRegex(context).join(",")}}`
   );
-  uris.forEach((uri) => {
-    console.log("Scanning", uri.fsPath);
-    scanFile(uri.fsPath);
-  });
+  uris.forEach((uri) => scanFile(uri.fsPath));
 }
 
 async function scanFile(path) {
   const tmpVulnList = [];
-  GLOBALS.getFeatureList().forEach((feature) => {
-    if (!feature.isEnabled()) return;
-    const vuln = feature.checker(path);
-    if (vuln) tmpVulnList.push(vuln);
-  });
+  for (const feature of GLOBALS.getFeatureList()) {
+    if (!feature.isEnabled()) continue;
+
+    const vuln = await feature.checker(path);
+    if (vuln) tmpVulnList.push(...vuln);
+  }
   const { getVulns } = require("./vuln");
   getVulns().set(path, tmpVulnList);
 }

@@ -14,6 +14,7 @@ var semgrepRuleSets = [];
 
 var enabledRegexRuleSets = [];
 var enabledSemgrepRuleSets = [];
+var semgrepServer = undefined;
 
 module.exports = {
   getFeatureList,
@@ -22,4 +23,5 @@ module.exports = {
   semgrepRuleSets,
   enabledRegexRuleSets,
   enabledSemgrepRuleSets,
+  semgrepServer,
 };

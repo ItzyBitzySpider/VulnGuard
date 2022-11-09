@@ -124,7 +124,7 @@ function updateWebview(context) {
         case "ERROR":
           error++;
           return;
-        case "WARN":
+        case "WARNING":
           warning++;
           return;
         case "INFO":
@@ -207,7 +207,9 @@ function updateWebview(context) {
           `
       <div class="row">
         <label class="checkbox${
-          curr.id === "semgrep" && isWindows ? " disabled" : ""
+          curr.id === "semgrep" && (isWindows || !Global.semgrepServer)
+            ? " disabled"
+            : ""
         }"
           >${
             curr.title +
@@ -217,9 +219,15 @@ function updateWebview(context) {
             type="checkbox"
             id="${curr.id}__checkbox"
             checked="${
-              curr.id === "semgrep" && isWindows ? false : curr.isEnabled()
+              curr.id === "semgrep" && (isWindows || !Global.semgrepServer)
+                ? false
+                : curr.isEnabled()
             }" 
-            ${curr.id === "semgrep" && isWindows ? `disabled="true"` : ""}/>
+            ${
+              curr.id === "semgrep" && (isWindows || !Global.semgrepServer)
+                ? `disabled="true"`
+                : ""
+            }/>
           <span class="checkmark"></span
         ></label>
       </div>
@@ -252,7 +260,7 @@ function updateWebview(context) {
           `
       <h2>${curr.title}</h2>
       ${
-        curr.id === "semgrep" && isWindows
+        curr.id === "semgrep" && (isWindows || !Global.semgrepServer)
           ? `<p style="margin-top:-10px;margin-bottom:15px;color:#71717a">${curr.title} disabled on Windows</p>`
           : ""
       }

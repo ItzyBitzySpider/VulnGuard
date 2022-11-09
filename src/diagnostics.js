@@ -6,7 +6,7 @@ let activeEditor = undefined;
 
 const SEVERITY = {
   ERROR: vscode.DiagnosticSeverity.Error,
-  WARN: vscode.DiagnosticSeverity.Warning,
+  WARNING: vscode.DiagnosticSeverity.Warning,
   INFO: vscode.DiagnosticSeverity.Information,
 };
 /**

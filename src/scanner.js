@@ -1,5 +1,4 @@
-import { getDisabledRules, setDisabledRules } from "./settings";
-
+const { getDisabledRules, setDisabledRules } = require("./settings");
 const promisify = require("util").promisify;
 const execFile = require("child_process").execFile;
 const path = require("path");
@@ -12,10 +11,11 @@ var {
   semgrepRuleSets,
   enabledRegexRuleSets,
   enabledSemgrepRuleSets,
+  semgrepServer, //Jon's paramto see if semgrepFound
 } = require("./globals");
 
 //SEMGREP FUNCTION
-export async function semgrepRuleSetsScan(configs, path, exclude = null) {
+async function semgrepRuleSetsScan(configs, path, exclude = null) {
   var hits = [];
   //append --exclude-rule to semgrep command for each exclude rule
   if (exclude)
@@ -50,7 +50,7 @@ export async function semgrepRuleSetsScan(configs, path, exclude = null) {
 }
 
 //REGEX FUNCTION
-export async function regexRuleSetsScan(ruleSets, path) {
+async function regexRuleSetsScan(ruleSets, path) {
   var hits = [];
   const promises = ruleSets.map((ruleSet) => {
     return regexRuleSetScan(ruleSet, path);
@@ -167,6 +167,10 @@ function scan(path) {
 }
 
 function getFilesRecursively(top_dir) {
+  if (!fs.existsSync(top_dir)) {
+    console.warn("Directory not found: " + top_dir);
+    return [];
+  }
   var files = [];
   function explore(dir) {
     fs.readdirSync(dir).forEach((file) => {
@@ -280,7 +284,7 @@ async function loadRegexRuleSet(path) {
 
     if (regex_type === "regex" || regex_type === "regex_and") {
       if (regex_type === "regex_and") {
-        //Internally swtich regex_and -> regex
+        //Internally switch regex_and -> regex
         rule.regex = rule.regex_and;
         delete rule.regex_and;
       }
@@ -313,29 +317,35 @@ async function loadRegexRuleSet(path) {
     regexRules.push(rule);
   }
 
-  //Use Semgrep to scan Regex rules to check for duplicate IDs, etc.
-  await semgrepRuleSetsScan(["p/semgrep-rule-lints"], path, [
-    "yaml.semgrep.missing-language-field.missing-language-field",
-    "yaml.semgrep.duplicate-pattern.duplicate-pattern",
-    "yaml.semgrep.unsatisfiable.unsatisfiable-rule",
-  ])
-    .then((results) => {
-      //Remove incompatible rules
-      for (const result of results) {
-        if (result.severity === "ERROR") {
-          throw result;
-        } else {
-          console.log(result);
+  if (semgrepServer) {
+    //Use Semgrep to scan Regex rules to check for duplicate IDs, etc.
+    await semgrepRuleSetsScan(["p/semgrep-rule-lints"], path, [
+      "yaml.semgrep.missing-language-field.missing-language-field",
+      "yaml.semgrep.duplicate-pattern.duplicate-pattern",
+      "yaml.semgrep.unsatisfiable.unsatisfiable-rule",
+    ])
+      .then((results) => {
+        //Remove incompatible rules
+        for (const result of results) {
+          if (result.severity === "ERROR") {
+            throw result;
+          } else {
+            console.log(result);
+          }
         }
-      }
-      var tmp = { path: path, ruleSet: regexRules }; //Only add current RuleSet if it has no errors
-      regexRuleSets.push(tmp);
-      enabledRegexRuleSets.push(tmp);
-    })
-    .catch((error) => {
-      console.error(error);
-      throw "Error parsing regex RuleSet";
-    });
+        var tmp = { path: path, ruleSet: regexRules }; //Only add current RuleSet if it has no errors
+        regexRuleSets.push(tmp);
+        enabledRegexRuleSets.push(tmp);
+      })
+      .catch((error) => {
+        console.error(error);
+        throw "Error parsing regex RuleSet";
+      });
+  } else {
+    let tmp = { path: path, ruleSet: regexRules };
+    regexRuleSets.push(tmp);
+    enabledRegexRuleSets.push(tmp);
+  }
 }
 
 async function loadRegexRuleSets(dir) {
@@ -372,13 +382,20 @@ function validRuleSet(path) {
   return 0;
 }
 
-//Initialise and abstract away backend for frontend
-export async function initScanner(context) {
+//Initialize and abstract away backend for frontend
+async function initScanner(context) {
   //TODO: Figure out proper subdirectory names
   var disabled = getDisabledRules(context); //Load disabled.json into memory
 
-  await loadRegexRuleSets("files/regex_rules"); //Load all the rules into memory
-  loadSemgrepRuleSets("files/semgrep_rules");
+  await loadRegexRuleSets(
+    path.join(context.extensionPath, "files", "regex_rules")
+  ); //Load all the rules into memory
+
+  if (semgrepServer) {
+    loadSemgrepRuleSets(
+      path.join(context.extensionPath, "files", "semgrep_rules")
+    );
+  }
 
   var cleanedDisabled = [];
   for (const disabledRuleSet of disabled) {
@@ -409,7 +426,7 @@ export async function initScanner(context) {
   );
 }
 
-export function disableRuleSet(context, path) {
+function disableRuleSet(context, path) {
   const validity = validRuleSet(path);
   if (validity === 1) {
     enabledRegexRuleSets = enabledRegexRuleSets.filter(
@@ -435,7 +452,7 @@ export function disableRuleSet(context, path) {
   setDisabledRules(disabled); //Update disabled.json
 }
 
-export function enableRuleSet(context, path) {
+function enableRuleSet(context, path) {
   var disabled = getDisabledRules(context); //Load disabled.json into memory
 
   if (!disabled.includes(path)) {
@@ -462,10 +479,18 @@ export function enableRuleSet(context, path) {
 
 //test function to be deleted
 //wrap in async since top level runs synchronously
-(async () => {
-  initScanner();
+// (async () => {
+//   initScanner();
 
-  console.time("test");
-  scan("sample.js");
-  console.timeEnd("test");
-})();
+//   console.time("test");
+//   scan("sample.js");
+//   console.timeEnd("test");
+// })();
+
+module.exports = {
+  disableRuleSet,
+  enableRuleSet,
+  initScanner,
+  regexRuleSetsScan,
+  semgrepRuleSetsScan,
+};

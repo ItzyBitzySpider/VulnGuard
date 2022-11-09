@@ -1,4 +1,5 @@
 {
   "semgrep": true,
-  "regex": true
+  "regex": true,
+  "tester": true
 }

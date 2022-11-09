@@ -12,7 +12,7 @@ const vulns = new Map();
  * @property {range | undefined} range
  * @property {number | undefined} line_no
  * @property {string | undefined} fix
- * @property {("INFO"|"ERROR"|"WARN")} severity - severity of error
+ * @property {("INFO"|"ERROR"|"WARNING")} severity - severity of error
  * @property {string} message - Error message
  *
  * @returns {Map<string,error[]>}
@@ -24,19 +24,16 @@ function getVulns() {
 function renameVulns(oldPath, newPath) {
   //New entry
   if (newPath.endsWith(".js") && !oldPath.endsWith(".js")) {
-    console.log("Add new");
     scanFile(newPath);
     return;
   }
   //Delete entry
   if (!newPath.endsWith(".js") && oldPath.endsWith(".js")) {
-    console.log("Delete old");
     vulns.delete(oldPath);
     return;
   }
   //Javascript file name change
   if (newPath.endsWith(".js") && oldPath.endsWith(".js")) {
-    console.log("File rename");
     vulns.set(newPath, vulns.get(oldPath));
     vulns.delete(oldPath);
     return;
@@ -45,7 +42,6 @@ function renameVulns(oldPath, newPath) {
   if (!newPath.endsWith(".js") && !oldPath.endsWith(".js")) {
     oldPath = oldPath + path.sep;
     newPath = newPath + path.sep;
-    console.log("Dir change");
     vulns.forEach((v, k) => {
       if (k.startsWith(oldPath)) {
         vulns.set(k.replace(oldPath, newPath), v);

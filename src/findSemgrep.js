@@ -1,13 +1,15 @@
 const which = require("which");
 const vscode = require("vscode");
 const extension = require("./extension");
+const Globals = require("./globals");
 
 const SEMGREP_BINARY = "semgrep";
 
 async function findSemgrep(ctx) {
   if (process.platform === "win32") {
     console.log("Windows Detected - Semgrep Disabled");
-    return undefined;
+    Globals.semgrepServer = undefined;
+    return;
   }
 
   const server = which.sync(SEMGREP_BINARY, { nothrow: true });
@@ -52,9 +54,10 @@ async function findSemgrep(ctx) {
         "Error: chosen package manager not installed"
       );
     }
-    return null;
+    Globals.semgrepServer = null;
+    return;
   }
-  return server;
+  Globals.semgrepServer = server;
 }
 
-module.exports = { findSemgrep };
+module.exports = findSemgrep;

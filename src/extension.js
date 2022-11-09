@@ -1,14 +1,16 @@
 const vscode = require("vscode");
 const diagnostics = require("./diagnostics");
-const semgrep = require("./semgrep");
+const findSemgrep = require("./findSemgrep");
 const { createWebview, updateWebview } = require("./webview");
-const { Feature, setFeatureContext, Rule } = require("./feature");
+const { Feature, setFeatureContext } = require("./feature");
 const Global = require("./globals");
 const { FixVulnCodeActionProvider } = require("./codeaction");
 const { setFeature, getFeatures } = require("./settings");
 const { scanWorkspace, scanFile } = require("./scanTrigger");
 const { renameVulns, deleteVulns } = require("./vuln");
-const { initScanner } = require("./scanner");
+const { initScanner, regexRuleSetsScan } = require("./scanner");
+
+//TODO use fix property to fix code
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -16,16 +18,26 @@ const { initScanner } = require("./scanner");
 async function activate(context) {
   console.log("VulnGuard has started and is running!");
 
-  const semgrepServer = await semgrep.findSemgrep(context);
-  if (!semgrepServer && getFeatures(context)["semgrep"])
+  await findSemgrep(context);
+  if (!Global.semgrepServer && getFeatures(context)["semgrep"])
     setFeature(context, "semgrep", false);
 
-  initScanner(context);
+  await initScanner(context);
   setFeatureContext(context);
 
   let tmpVar = 0;
-
   const featureList = Global.getFeatureList();
+  featureList.push(
+    new Feature(
+      "tester",
+      "Test Feature",
+      async (file) => {
+        const x = await regexRuleSetsScan(Global.enabledRegexRuleSets, file);
+        return x;
+      },
+      Global.enabledRegexRuleSets
+    )
+  );
   featureList.push(
     new Feature(
       "semgrep",
@@ -38,7 +50,7 @@ async function activate(context) {
           message: "SemGrep Rule Caught",
         };
       },
-      [new Rule("sr1", "tt1", "test trr", "ERROR")]
+      [{ id: "sr1", title: "tt1", message: "test trr", severity: "ERROR" }]
     )
   );
   featureList.push(
@@ -66,7 +78,7 @@ async function activate(context) {
               id: "id2",
               line_no: tmpVar * 2,
               fix: "<some random fixed code>",
-              severity: "WARN",
+              severity: "WARNING",
               message: "Regex Warn Caught",
             };
           case 3:
@@ -82,9 +94,9 @@ async function activate(context) {
         }
       },
       [
-        new Rule("rr1", "t1", "test rr", "WARN"),
-        new Rule("rr2", "t2", "test rr", "INFO"),
-        new Rule("rr3", "t3", "test rr", "ERROR"),
+        { id: "rr1", title: "t1", message: "test rr", severity: "WARNING" },
+        { id: "rr2", title: "t2", message: "test rr", severity: "INFO" },
+        { id: "rr3", title: "t3", message: "test rr", severity: "ERROR" },
       ]
     )
   );
@@ -96,14 +108,14 @@ async function activate(context) {
     new FixVulnCodeActionProvider()
   );
 
-  scanWorkspace(context).then(() => {
-    diagnostics.initWindowDiagnostics(
-      vulnDiagnostics,
-      vscode.window.visibleTextEditors,
-      vscode.window.activeTextEditor
-    );
-    updateWebview(context);
-  });
+  // scanWorkspace(context).then(() => {
+  //   diagnostics.initWindowDiagnostics(
+  //     vulnDiagnostics,
+  //     vscode.window.visibleTextEditors,
+  //     vscode.window.activeTextEditor
+  //   );
+  //   updateWebview(context);
+  // });
 
   //onSave active document
   // vscode.workspace.onDidSaveTextDocument(
