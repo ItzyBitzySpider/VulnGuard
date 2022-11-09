@@ -8,6 +8,7 @@ const { FixVulnCodeActionProvider } = require("./codeaction");
 const { setFeature, getFeatures } = require("./settings");
 const { scanWorkspace, scanFile } = require("./scanTrigger");
 const { renameVulns, deleteVulns } = require("./vuln");
+const { initScanner } = require("./scanner");
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -19,6 +20,7 @@ async function activate(context) {
   if (!semgrepServer && getFeatures(context)["semgrep"])
     setFeature(context, "semgrep", false);
 
+  initScanner(context);
   setFeatureContext(context);
 
   let tmpVar = 0;
@@ -142,6 +144,7 @@ async function activate(context) {
     null,
     context.subscriptions
   );
+  //TODO rename handling
   vscode.workspace.onDidRenameFiles(
     (event) => {
       event.files.forEach((f) => {

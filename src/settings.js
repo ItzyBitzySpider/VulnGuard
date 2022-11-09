@@ -86,10 +86,47 @@ function deleteIgnoredRegex(context, idx) {
   });
 }
 
+let disabledRules = undefined;
+function getDisabledRulesPath(context) {
+  const dir = getGlobalPath(context);
+  return path.join(dir, "disabled.json");
+}
+/**
+ * @param {vscode.ExtensionContext} context
+ */
+function getDisabledRules(context) {
+  if (disabledRules) return disabledRules;
+  if (!context) return undefined;
+
+  const disabledRulesPath = getDisabledRulesPath(context);
+  if (!fs.existsSync(disabledRulesPath))
+    fs.writeFileSync(disabledRulesPath, JSON.stringify([]), "utf8");
+  disabledRules = JSON.parse(fs.readFileSync(disabledRulesPath, "utf8"));
+  return disabledRules;
+}
+/**
+ * @param {vscode.ExtensionContext} context
+ * @param {object[]} disabled
+ */
+function setDisabledRules(context, disabled) {
+  const disabledRulesPath = getDisabledRulesPath(context);
+  fs.writeFile(
+    disabledRulesPath,
+    JSON.stringify(disabled),
+    { encoding: "utf8" },
+    function (err) {
+      if (err) return console.log(err);
+      console.log(`Written to ${disabledRulesPath}`);
+    }
+  );
+}
+
 module.exports = {
   getFeatures,
   setFeature,
   getIgnoredRegex,
   addIgnoredRegex,
   deleteIgnoredRegex,
+  getDisabledRules,
+  setDisabledRules,
 };
