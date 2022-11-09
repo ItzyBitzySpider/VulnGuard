@@ -435,7 +435,7 @@ function enableRuleSet(context, path) {
 
   const validity = validRuleSet(path);
   if (validity === 1) {
-    for (const regexRuleSet of regexRuleSets) {
+    for (const regexRuleSet of Global.regexRuleSets) {
       if (regexRuleSet.path === path) {
         let tmp;
         try {
