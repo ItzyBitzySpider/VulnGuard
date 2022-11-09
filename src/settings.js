@@ -109,6 +109,7 @@ function getDisabledRules(context) {
  * @param {object[]} disabled
  */
 function setDisabledRules(context, disabled) {
+  disabledRules = disabled;
   const disabledRulesPath = getDisabledRulesPath(context);
   fs.writeFile(
     disabledRulesPath,
