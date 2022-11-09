@@ -225,7 +225,7 @@ function validateRegexTree(node) {
   }
 }
 
-async function loadRegexRuleSet(path) {
+function loadRegexRuleSet(path) {
   var regexRules = [];
   const cfg = fs.readFileSync(path, "utf8");
   const dat = yaml.parse(cfg);
@@ -317,41 +317,15 @@ async function loadRegexRuleSet(path) {
     regexRules.push(rule);
   }
 
-  if (semgrepServer) {
-    //Use Semgrep to scan Regex rules to check for duplicate IDs, etc.
-    await semgrepRuleSetsScan(["p/semgrep-rule-lints"], path, [
-      "yaml.semgrep.missing-language-field.missing-language-field",
-      "yaml.semgrep.duplicate-pattern.duplicate-pattern",
-      "yaml.semgrep.unsatisfiable.unsatisfiable-rule",
-    ])
-      .then((results) => {
-        //Remove incompatible rules
-        for (const result of results) {
-          if (result.severity === "ERROR") {
-            throw result;
-          } else {
-            console.log(result);
-          }
-        }
-        var tmp = { path: path, ruleSet: regexRules }; //Only add current RuleSet if it has no errors
-        regexRuleSets.push(tmp);
-        enabledRegexRuleSets.push(tmp);
-      })
-      .catch((error) => {
-        console.error(error);
-        throw "Error parsing regex RuleSet";
-      });
-  } else {
-    let tmp = { path: path, ruleSet: regexRules };
-    regexRuleSets.push(tmp);
-    enabledRegexRuleSets.push(tmp);
-  }
+  let tmp = { path: path, ruleSet: regexRules };
+  regexRuleSets.push(tmp);
+  enabledRegexRuleSets.push(tmp);
 }
 
-async function loadRegexRuleSets(dir) {
+function loadRegexRuleSets(dir) {
   var files = getFilesRecursively(dir);
   for (const file of files) {
-    await loadRegexRuleSet(file);
+    loadRegexRuleSet(file);
   }
 }
 
@@ -383,11 +357,11 @@ function validRuleSet(path) {
 }
 
 //Initialize and abstract away backend for frontend
-async function initScanner(context) {
+function initScanner(context) {
   //TODO: Figure out proper subdirectory names
   var disabled = getDisabledRules(context); //Load disabled.json into memory
 
-  await loadRegexRuleSets(
+  loadRegexRuleSets(
     path.join(context.extensionPath, "files", "regex_rules")
   ); //Load all the rules into memory
 
