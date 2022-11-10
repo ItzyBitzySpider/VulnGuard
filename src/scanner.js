@@ -232,7 +232,7 @@ function analyzePackage(dir) {
 }
 
 //Rulesets loading and validation functions
-function validateRegexTree(node) {
+function validateRegexTree(node, case_sensitive) {
   for (const field of node) {
     const propertyNames = Object.getOwnPropertyNames(field);
     if (propertyNames.length !== 1) {
@@ -262,12 +262,12 @@ function validateRegexTree(node) {
       if (key === "regex_not") {
         throw "regex_not cannot be used on a regex subtree";
       }
-      validateRegexTree(val);
+      validateRegexTree(val, case_sensitive);
     } else {
       if (key === "regex_or") {
         throw "regex_or can only be used on a regex subtree";
       }
-      field[key] = new RegExp(field[key], "g"); //Compile regex while validating tree
+      field[key] = new RegExp(field[key], "g" + (case_sensitive ? "" : "i")); //Compile regex while validating tree
     }
   }
 }
@@ -299,7 +299,8 @@ function _loadRegexRuleSet(path) {
       f_severity = false,
       f_regex = false,
       f_fix = false,
-      f_reference = false;
+      f_reference = false,
+      f_case_sensitive = false;
     regex_type = "";
     for (const propertyName of propertyNames) {
       if (propertyName === "id") {
@@ -331,6 +332,8 @@ function _loadRegexRuleSet(path) {
       } else if (propertyName === "reference") {
         //Optional
         f_reference = true;
+      } else if (propertyName === "case_sensitive") {
+        f_case_sensitive = true;
       } else {
         throw "Unknown property name " + propertyName;
       }
@@ -348,6 +351,9 @@ function _loadRegexRuleSet(path) {
     if (!f_regex) {
       throw "rule is missing 'regex'/'regex_and'/'regex_or'/'regex_not' field";
     }
+    if(!f_case_sensitive) {
+      rule.case_sensitive = true; //Case sensitive by default
+    }
 
     if (regex_type === "regex" || regex_type === "regex_and") {
       if (regex_type === "regex_and") {
@@ -357,10 +363,10 @@ function _loadRegexRuleSet(path) {
       }
 
       if (typeof rule.regex === "object") {
-        validateRegexTree(rule.regex);
+        validateRegexTree(rule.regex, rule.case_sensitive);
       } else {
         //TODO: Should val_type be strictly enforced?
-        rule.regex = new RegExp(rule.regex, "g"); //Compile regex while validating
+        rule.regex = new RegExp(rule.regex, "g" + (rule.case_sensitive ? "" : "i")); //Compile regex while validating
       }
     } else if (regex_type === "regex_or") {
       if (typeof rule.regex_or !== "object") {
@@ -370,13 +376,13 @@ function _loadRegexRuleSet(path) {
       rule.regex = [{ regex_or: rule.regex_or }]; //Internally make regex_or a subtree of regex
       delete rule.regex_or;
 
-      validateRegexTree(rule.regex);
+      validateRegexTree(rule.regex, rule.case_sensitive);
     } else {
       //regex_not
       if (typeof rule.regex_not === "object") {
         throw "regex_not cannot be used on a regex subtree";
       } //TODO: Should val_type be strictly enforced?
-      rule.regex_not = new RegExp(rule.regex_not, "g"); //Compile regex while validating
+      rule.regex_not = new RegExp(rule.regex_not, "g" + (rule.case_sensitive ? "" : "i")); //Compile regex while validating
 
       rule.regex = [{ regex_not: rule.regex_not }]; //Internally make regex_not a subfield of regex
       delete rule.regex_not;
