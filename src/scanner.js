@@ -181,6 +181,17 @@ async function analyzePackage(dir) {
       hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets["manifest.scripts"], JSON.stringify(dat["scripts"])));
     }
 
+    let hasNoSourceCodeRefInHomepage = typeof dat.homepage !== 'string' || (!dat.homepage.includes('github') && !dat.homepage.includes('gitlab'));
+    let hasNoSourceCodeRefInRepository = typeof dat.repository !== 'object' ||  typeof dat.repository.url !== 'string' || (!dat.repository.url.includes('github') && !dat.repository.url.includes('gitlab'));
+    if (hasNoSourceCodeRefInHomepage && hasNoSourceCodeRefInRepository) {
+      hits.push({
+        //TODO add reference
+        severity: "WARNING",
+        message: "No source code repository found for package",
+        id: "no-source-code-repository",
+      });
+    }
+      
     var files = getFilesRecursively(modulePath);
     for (const file of files) {
       const ext = path.extname(file);
