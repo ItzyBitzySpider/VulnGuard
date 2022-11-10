@@ -34,7 +34,7 @@ var enabledRegexRuleSets = [];
 var enabledSemgrepRuleSets = [];
 var semgrepServer = undefined;
 
-var dependencyRegexRuleSets = Map();
+var dependencyRegexRuleSets = {}; //Object of arrays
 
 var vulnDiagnostics = vscode.languages.createDiagnosticCollection("vulns");
 
