@@ -12,6 +12,7 @@ const crypto = require("crypto");
 const os = require("os");
 
 //SEMGREP FUNCTION
+//TODO: Add interrupt functionality
 async function semgrepRuleSetsScan(configs, path, exclude = null) {
   var hits = [];
   //append --exclude-rule to semgrep command for each exclude rule
