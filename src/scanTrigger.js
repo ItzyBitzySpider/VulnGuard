@@ -1,12 +1,12 @@
 const vscode = require("vscode");
 const path = require("path");
-const GLOBALS = require("./globals");
+const Global = require("./globals");
 const { getIgnoredRegex } = require("./settings");
 
 async function scan(fsPath) {
   console.log("Scanning", fsPath);
   const tmpVulnList = [];
-  for (const feature of GLOBALS.getFeatureList()) {
+  for (const feature of Global.getFeatureList()) {
     if (!feature.isEnabled()) continue;
 
     const vuln = await feature.scanForVulns(fsPath);
@@ -24,8 +24,6 @@ async function scanIgnored(context, ignored) {
     search,
     `{${getIgnoredRegex(context).join(",")}}`
   );
-  console.log("Rescanning", search);
-  console.log(uris);
   await Promise.all(uris.map((uri) => scan(uri.fsPath)));
 }
 
