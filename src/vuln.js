@@ -21,10 +21,10 @@ function getVulns() {
   return vulns;
 }
 
-function renameVulns(oldPath, newPath) {
+function renameVulns(context, oldPath, newPath) {
   //New entry
   if (newPath.endsWith(".js") && !oldPath.endsWith(".js")) {
-    scanFile(newPath);
+    scanFile(context, newPath);
     return;
   }
   //Delete entry

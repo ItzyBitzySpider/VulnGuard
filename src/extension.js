@@ -8,9 +8,16 @@ const { FixVulnCodeActionProvider } = require("./codeaction");
 const { setFeature, getFeatures } = require("./settings");
 const { scanWorkspace, scanFile } = require("./scanTrigger");
 const { renameVulns, deleteVulns } = require("./vuln");
-const { initScanner, regexRuleSetsScan } = require("./scanner");
+const {
+  initScanner,
+  regexRuleSetsScan,
+  semgrepRuleSetsScan,
+} = require("./scanner");
 
 //TODO use fix property to fix code
+//TODO ignore line action
+//TODO ignore error for line action
+//TODO ignore file action
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -27,91 +34,28 @@ async function activate(context) {
 
   let tmpVar = 0;
   const featureList = Global.getFeatureList();
-  featureList.push(
-    new Feature(
-      "tester",
-      "Test Feature",
-      async (file) => {
-        const x = await regexRuleSetsScan(Global.enabledRegexRuleSets, file);
-        return x;
-      },
-      () => ({
-        enabled: Global.enabledRegexRuleSets,
-        all: Global.regexRuleSets,
-      })
-    )
-  );
-  featureList.push(
-    new Feature(
-      "semgrep",
-      "SemGrep",
-      (file) => {
-        return {
-          start: 50,
-          end: 100,
-          severity: "ERROR",
-          message: "SemGrep Rule Caught",
-        };
-      },
-      () => ({
-        enabled: [{ path: "sr1", ruleSet: [] }],
-        all: [
-          { path: "sr1", ruleSet: [] },
-          { path: "sr2", ruleSet: [] },
-        ],
-      })
-    )
-  );
+  if (Global.semgrepServer) {
+    featureList.push(
+      new Feature(
+        "semgrep",
+        "SemGrep",
+        (file) => semgrepRuleSetsScan(Global.enabledSemgrepRuleSets, file),
+        () => ({
+          enabled: Global.enabledSemgrepRuleSets,
+          all: Global.semgrepRuleSets,
+        })
+      )
+    );
+  }
   featureList.push(
     new Feature(
       "regex",
       "Regex",
-      (file) => {
-        if (tmpVar > 11) tmpVar = 0;
-        switch (tmpVar++ % 4) {
-          case 0:
-            return;
-          case 1:
-            return {
-              id: "id1",
-              range: {
-                start: tmpVar * 5,
-                end: (tmpVar + 1) * 5 - 2,
-              },
-              fix: "<some random fixed code>",
-              severity: "ERROR",
-              message: "Regex Err Caught",
-            };
-          case 2:
-            return {
-              id: "id2",
-              line_no: tmpVar * 2,
-              fix: "<some random fixed code>",
-              severity: "WARNING",
-              message: "Regex Warn Caught",
-            };
-          case 3:
-            return {
-              id: "id3",
-              range: {
-                start: tmpVar * 5,
-                end: (tmpVar + 1) * 5 - 2,
-              },
-              severity: "INFO",
-              message: "Regex Info Caught",
-            };
-        }
-      },
+      async (file) =>
+        await regexRuleSetsScan(Global.enabledRegexRuleSets, file),
       () => ({
-        enabled: [
-          { path: "rr1", ruleSet: [] },
-          { path: "rr3", ruleSet: [] },
-        ],
-        all: [
-          { path: "rr1", ruleSet: [] },
-          { path: "rr2", ruleSet: [] },
-          { path: "rr3", ruleSet: [] },
-        ],
+        enabled: Global.enabledRegexRuleSets,
+        all: Global.regexRuleSets,
       })
     )
   );
@@ -123,6 +67,15 @@ async function activate(context) {
     new FixVulnCodeActionProvider()
   );
 
+  scanFile(context, vscode.window.activeTextEditor.document.uri.fsPath).then(
+    () => {
+      diagnostics.initWindowDiagnostics(
+        vulnDiagnostics,
+        vscode.window.visibleTextEditors,
+        vscode.window.activeTextEditor
+      );
+    }
+  );
   // TODO possibly scan entire workspace on start?
   // scanWorkspace(context).then(() => {
   //   diagnostics.initWindowDiagnostics(
@@ -149,7 +102,7 @@ async function activate(context) {
     (event) => {
       if (changeTimer) clearTimeout(changeTimer);
       changeTimer = setTimeout(() => {
-        scanFile(event.document.uri.fsPath).then(() => {
+        scanFile(context, event.document.uri.fsPath).then(() => {
           diagnostics.handleActiveEditorTextChange(
             event.document,
             vulnDiagnostics
@@ -176,7 +129,7 @@ async function activate(context) {
     (event) => {
       event.files.forEach((f) => {
         if (f.oldUri.scheme === "file") {
-          renameVulns(f.oldUri.fsPath, f.newUri.fsPath);
+          renameVulns(context, f.oldUri.fsPath, f.newUri.fsPath);
         }
       });
     },
@@ -199,7 +152,7 @@ async function activate(context) {
     //onCreate
     watcher.onDidCreate((uri) => {
       if (uri.scheme !== "file") return;
-      scanFile(uri.fsPath).then(() => updateWebview(context));
+      scanFile(context, uri.fsPath).then(() => updateWebview(context));
     }),
     vulnDiagnostics,
     vulnCodeActions
