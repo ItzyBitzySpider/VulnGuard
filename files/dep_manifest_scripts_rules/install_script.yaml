@@ -4,6 +4,7 @@ rules:
     message: 'Package includes install scripts - you should verify them'
     severity: WARNING
     reference: 'https://blog.usejournal.com/12-strange-things-that-can-happen-after-installing-an-npm-package-45de7fbf39f0'
+    case_sensitive: false
     regex_or:
       - regex: '\bpreinstall\b'
       - regex: '\binstall\b'

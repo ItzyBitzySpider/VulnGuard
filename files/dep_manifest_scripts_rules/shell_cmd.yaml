@@ -3,6 +3,7 @@ rules:
   - id: dangerous-shell-commands
     message: 'Package includes dangerous shell commands'
     severity: WARNING
+    case_sensitive: false
     regex_or:
       - regex: '\bwget\b'
       - regex: '\bcurl\b'
@@ -13,5 +14,3 @@ rules:
       - regex: '\btakeown\b'
       - regex: '\bchown\b'
       - regex: '\bchmod\b'
-    
-# CASE Insensitive

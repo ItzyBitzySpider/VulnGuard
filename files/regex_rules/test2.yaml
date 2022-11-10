@@ -3,6 +3,7 @@ rules:
     message: 'regex AND expression'
     severity: WARNING
     reference: "https://www.yahoo.com"
+    case_sensitive: true
     regex:
       - regex: '\bSELECT\b'
       - regex_and: '\buser_name\b'
@@ -10,6 +11,7 @@ rules:
     message: 'regex nested expression. PURCHASES && (SELECT || UPDATE || INSERT) && user_name && !product_name'
     severity: WARNING
     reference: "https://www.facebook.com"
+    case_sensitive: true
     regex:
       - regex: '\bpurchases\b'
       - regex_or:

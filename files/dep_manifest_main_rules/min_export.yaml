@@ -4,6 +4,7 @@ rules:
     message: 'Package main module export is minified'
     severity: WARNING
     reference: 'https://schneid.io/blog/event-stream-vulnerability-explained/'
+    case_sensitive: false
     regex: '.*\.min'
 
   # CASE Insensitive
