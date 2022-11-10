@@ -164,34 +164,40 @@ function applyRegexCheck(node, parent_type, text) {
 
 //Dependency Check
 async function analyzePackage(dir) {
-  var hits = [];
+  var finalHits = [];
 
-  const manifest = fs.readFileSync(path.join(dir, "package.json"), "utf8");
-  const dat = JSON.parse(manifest);
+  var modulePaths = getTopLevelDirectories(path.join(dir, "node_modules"));
+  for (const modulePath of modulePaths) {
+    var hits = [];
 
-  if (dat["main"]) {
-    hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets["manifest.main"], JSON.stringify(dat["main"])));
-  }
-  if (dat["scripts"]) {
-    hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets["manifest.scripts"], JSON.stringify(dat["scripts"])));
-  }
+    const manifest = fs.readFileSync(path.join(modulePath, "package.json"), "utf8");
+    const dat = JSON.parse(manifest);
 
-  function explore(dir) {
-    fs.readdirSync(dir).forEach((file) => {
-      const absolute = path.join(dir, file);
-      if (fs.statSync(absolute).isDirectory()) {
-        explore(absolute);
-      } else {
-        if (['.coffee', '.js', '.jsx', '.ts', '.tsx', '.mjs', '.json'].includes(path.extname(absolute))) {
-          hits = hits.concat(await regexRuleSetsScan(Global.dependencyRegexRuleSets["check"], absolute));
-        }
+    //TODO: Remove line numbers since they are completely wrong
+    if (dat["main"]) {
+      hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets["manifest.main"], JSON.stringify(dat["main"])));
+    }
+    if (dat["scripts"]) {
+      hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets["manifest.scripts"], JSON.stringify(dat["scripts"])));
+    }
+
+    var files = getFilesRecursively(modulePath);
+    for (const file of files) {
+      const ext = path.extname(file);
+      if (['.coffee', '.js', '.jsx', '.ts', '.tsx', '.mjs', '.json'].includes(ext)) {
+        hits = hits.concat(await regexRuleSetsScan(Global.dependencyRegexRuleSets["check"], file));
+      } else if (['.sh', '.bash', '.bat', '.cmd'].includes(ext)) {
+        hits.push({
+          severity: "WARNING",
+          message: "Package includes OS scripts - you should verify them",
+          id: "has-os-scripts",
+        });
       }
-    });
+    }
+
+    finalHits[modulePath] = hits;
   }
-
-  explore(path.join(dir, "node_modules"));
-
-  return hits;
+  return finalHits;
 }
 
 //Misc Functions
@@ -199,6 +205,12 @@ function writeToTempFile(text) {
   const tmpPath = path.join(os.tmpdir(), crypto.randomBytes(16).toString('hex'));
   fs.writeFileSync(tmpPath, text, "utf8");
   return tmpPath;
+}
+
+function getTopLevelDirectories(dir) {
+  return fs.readdirSync(dir).filter(function (file) {
+    return fs.statSync(path.join(dir, file)).isDirectory();
+  });
 }
 
 function getFilesRecursively(top_dir) {
