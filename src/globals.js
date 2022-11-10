@@ -47,4 +47,5 @@ module.exports = {
   semgrepServer,
   vulnDiagnostics,
   vulns,
+  dependencyRegexRuleSets,
 };
