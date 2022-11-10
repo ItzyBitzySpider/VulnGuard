@@ -136,7 +136,7 @@ function createWebview(context) {
                 .showInformationMessage(
                   `Ruleset ${
                     message.value === "true" ? "enabled" : "disabled"
-                  }. Restart Visual Studio Code to take effect`,
+                  }. Restart Visual Studio Code for changes to take effect`,
                   "Restart"
                 )
                 .then((value) => {
@@ -165,7 +165,7 @@ function createWebview(context) {
 function getFeatureEntries(feature) {
   const rulesetData = feature.getRulesetData();
   let entries = "";
-  rulesetData.rulesets.forEach((enabled, path) => {
+  [...rulesetData.rulesets.entries()].sort().forEach(([path, enabled]) => {
     entries += `<div class="row">
     <p class="${enabled ? "" : "disabled"}" style="flex: 1">${getTitleFromPath(
       path
