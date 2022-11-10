@@ -7,6 +7,7 @@ const readline = require("readline");
 const yaml = require("yaml");
 const execFileAsync = promisify(execFile);
 const Global = require("./globals");
+const vscode = require("vscode");
 
 //SEMGREP FUNCTION
 async function semgrepRuleSetsScan(configs, path, exclude = null) {
@@ -226,6 +227,9 @@ function loadRegexRuleSet(path) {
     Global.regexRuleSets.push(tmp);
     Global.enabledRegexRuleSets.push(tmp);
   } catch (error) {
+    vscode.window.showErrorMessage(
+      "Error loading regex ruleset " + path + ": " + error
+    );
     console.error("Unable to load Regex RuleSet", path, "due to error:", error);
     let tmp = { path: path }; //Only store path
     Global.regexRuleSets.push(tmp);
@@ -409,6 +413,9 @@ function initScanner(context) {
 function disableRuleSet(context, path) {
   var disabled = getDisabledRules(context); //Load disabled.json into memory
   if (disabled.includes(path)) {
+    vscode.window.showErrorMessage(
+      "Unable to disable RuleSet " + path + " since it was already disabled"
+    );
     console.error(
       "Unable to disable RuleSet " + path + " since it was already disabled"
     );
@@ -425,6 +432,9 @@ function disableRuleSet(context, path) {
       (item) => item !== path
     );
   } else {
+    vscode.window.showErrorMessage(
+      "Unable to disable RuleSet " + path + " since it could not be found"
+    );
     console.error(
       "Unable to disable RuleSet " + path + " since it does not exist"
     );
@@ -438,6 +448,9 @@ function disableRuleSet(context, path) {
 function enableRuleSet(context, path) {
   var disabled = getDisabledRules(context); //Load disabled.json into memory
   if (!disabled.includes(path)) {
+    vscode.window.showErrorMessage(
+      "Unable to enable RuleSet " + path + " since it was already enabled"
+    );
     console.error(
       "Unable to re-enable RuleSet " + path + " since it was not disabled"
     );
@@ -452,6 +465,9 @@ function enableRuleSet(context, path) {
         try {
           tmp = _loadRegexRuleSet(path);
         } catch (error) {
+          vscode.window.showErrorMessage(
+            "Unable to re-enable Regex RuleSet " + path + " due to error: " + error
+          );
           console.error(
             "Unable to re-enable Regex RuleSet " +
               path +
@@ -475,6 +491,9 @@ function enableRuleSet(context, path) {
   } else if (validity === 2) {
     Global.enabledSemgrepRuleSets.push(path); //TODO: Do proper data validation?
   } else {
+    vscode.window.showErrorMessage(
+      "Unable to re-enable RuleSet " + path + " since it could not be found"
+    );
     console.error(
       "Unable to re-enable RuleSet " + path + " since it does not exist"
     );
