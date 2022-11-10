@@ -10,3 +10,5 @@ rules:
     severity: WARNING
     reference: 'https://blog.compass-security.com/2016/10/bypassing-content-security-policy-with-dns-prefetching/'
     regex: 'link.*[ .]rel.*=.*prefetch'
+
+    # CASE Insensitive for both

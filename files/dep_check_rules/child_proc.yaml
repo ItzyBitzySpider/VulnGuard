@@ -5,3 +5,5 @@ rules:
     severity: WARNING
     reference: 'https://news.ycombinator.com/item?id=17283394'
     regex: 'child_process'
+
+    # CASE Insensitive

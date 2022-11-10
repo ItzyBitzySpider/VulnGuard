@@ -12,3 +12,4 @@ rules:
       - regex: '\bpostuninstall\b'
     
 #  if (packageManifest.scripts && Object.keys(packageManifest.scripts).some(script => installScripts.includes(script))) {
+# CASE Insensitive

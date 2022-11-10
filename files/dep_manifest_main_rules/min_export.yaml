@@ -6,4 +6,4 @@ rules:
     reference: 'https://schneid.io/blog/event-stream-vulnerability-explained/'
     regex: '.*\.min'
 
-#  if (packageManifest.main && packageManifest.main.match(re)) {
+  # CASE Insensitive

@@ -15,3 +15,4 @@ rules:
       - regex: '\bchmod\b'
     
 #   packageManifestObject.scripts || {}
+# CASE Insensitive
