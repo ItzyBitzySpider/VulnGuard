@@ -1,5 +1,4 @@
 const vscode = require("vscode");
-const { FIX_VULN_CODE } = require("./globals");
 
 class FixVulnCodeActionProvider {
   constructor() {
@@ -16,36 +15,54 @@ class FixVulnCodeActionProvider {
    */
 
   provideCodeActions(document, range, context, token) {
-    return context.diagnostics
-      .filter((diagnostic) => diagnostic.tags.includes(FIX_VULN_CODE))
-      .map((diagnostic) => this.createCodeAction(document, diagnostic.range));
+    const outputActions = [];
+    context.diagnostics.forEach((diagnostic) => 
+       outputActions.push(...this.createCodeAction(document, diagnostic));
+    );
+    return outputActions;
   }
 
   /**
    *
    * @param {vscode.TextDocument} document
-   * @param {vscode.Range} range
+   * @param {vscode.Diagnostic} diagnostic
    * @returns {vscode.CodeAction}
    */
-  createCodeAction(document, range) {
+  createCodeAction(document, diagnostic) {
     const fixAction = new vscode.CodeAction(
-      "Fix bug",
+      "Fix using VulnGuard suggestion",
       vscode.CodeActionKind.QuickFix
     );
-    //Copy range to avoid invalidArgument range
-    const r = new vscode.Range(
-      range.start.line,
-      range.start.character,
-      range.end.line,
-      range.end.character
+    if (diagnostic.tags) {
+      fixAction.edit = new vscode.WorkspaceEdit();
+      fixAction.edit.replace(
+        document.uri,
+        diagnostic.range,
+        diagnostic.tags[0]
+      );
+    }
+
+    const ignoreLineRuleAction = new vscode.CodeAction(
+      `Disable ${diagnostic.code.value} for this line`,
+      vscode.CodeActionKind.QuickFix
     );
-    fixAction.edit = new vscode.WorkspaceEdit();
-    fixAction.edit.replace(
+    const firstLine = new vscode.Range(
+      diagnostic.range.start.line,
+      0,
+      diagnostic.range.start.line,
+      diagnostic.range.start.character
+    );
+    ignoreLineRuleAction.edit = new vscode.WorkspaceEdit();
+    ignoreLineRuleAction.edit.replace(
       document.uri,
-      r,
-      document.getText(r) + " TEST OUTPUT"
+      firstLine,
+      `// vulnguard-disable-${diagnostic.code.value} \n` +
+        document.getText(firstLine)
     );
-    return fixAction;
+
+    return diagnostic.tags
+      ? [fixAction, ignoreLineRuleAction]
+      : [ignoreLineRuleAction];
   }
 }
 

@@ -51,7 +51,15 @@ function updateDiagnostics(editors) {
         range: range,
         message: vuln.message,
         source: "VulnGuard",
-        tags: vuln.fix ? [Global.FIX_VULN_CODE] : undefined,
+        code: {
+          //kebab-case vuln id
+          value: vuln.id
+            .replace(/([a-z])([A-Z])/g, "$1-$2")
+            .replace(/[\s_]+/g, "-")
+            .toLowerCase(),
+          target: vscode.Uri.parse("https://google.com"),
+        },
+        tags: vuln.fix ? [vuln.fix] : undefined,
       };
     });
     Global.vulnDiagnostics.set(editor.document.uri, diagnostics);

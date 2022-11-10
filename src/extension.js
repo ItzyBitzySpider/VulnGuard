@@ -14,8 +14,7 @@ const {
   semgrepRuleSetsScan,
 } = require("./scanner");
 
-//TODO use fix property to fix code
-//TODO ignore line action
+//TODO ignore line token processing
 //TODO ignore error for line action
 //TODO ignore file action
 

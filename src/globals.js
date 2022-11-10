@@ -9,7 +9,6 @@ const featureList = [];
 function getFeatureList() {
   return featureList;
 }
-const FIX_VULN_CODE = "vulnfix";
 var regexRuleSets = [];
 var semgrepRuleSets = [];
 
@@ -21,7 +20,6 @@ var vulnDiagnostics = vscode.languages.createDiagnosticCollection("vulns");
 
 module.exports = {
   getFeatureList,
-  FIX_VULN_CODE,
   regexRuleSets,
   semgrepRuleSets,
   enabledRegexRuleSets,
