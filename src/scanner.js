@@ -463,6 +463,11 @@ function initScanner(context) {
     );
     if (userRulesets["semgrep"]) { //There are user-created Semgrep RuleSets
       for (const semgrepRuleset of userRulesets["semgrep"]) {
+        if (semgrepRuleset.startsWith("p/")) { //Semgrep Repository
+          loadSemgrepRuleSet(semgrepRuleset);
+          continue;
+        }
+
         const pathType = getPathType(semgrepRuleset);
         if (pathType === 0) { //File
           loadSemgrepRuleSet(semgrepRuleset);
