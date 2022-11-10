@@ -162,6 +162,38 @@ function applyRegexCheck(node, parent_type, text) {
   return res;
 }
 
+//Dependency Check
+async function analyzePackage(dir) {
+  var hits = [];
+
+  const manifest = fs.readFileSync(path.join(dir, "package.json"), "utf8");
+  const dat = JSON.parse(manifest);
+
+  if (dat["main"]) {
+    hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets["manifest.main"], JSON.stringify(dat["main"])));
+  }
+  if (dat["scripts"]) {
+    hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets["manifest.scripts"], JSON.stringify(dat["scripts"])));
+  }
+
+  function explore(dir) {
+    fs.readdirSync(dir).forEach((file) => {
+      const absolute = path.join(dir, file);
+      if (fs.statSync(absolute).isDirectory()) {
+        explore(absolute);
+      } else {
+        if (['.coffee', '.js', '.jsx', '.ts', '.tsx', '.mjs', '.json'].includes(path.extname(absolute))) {
+          hits = hits.concat(await regexRuleSetsScan(Global.dependencyRegexRuleSets["check"], absolute));
+        }
+      }
+    });
+  }
+
+  explore(path.join(dir, "node_modules"));
+
+  return hits;
+}
+
 //Misc Functions
 function writeToTempFile(text) {
   const tmpPath = path.join(os.tmpdir(), crypto.randomBytes(16).toString('hex'));
@@ -198,37 +230,6 @@ function getPathType(path) {
   } catch (error) {
     return 2; //Path does not exist
   }
-}
-
-function analyzePackage(dir) {
-  var hits = [];
-
-  const manifest = fs.readFileSync(path.join(dir, "package.json"), "utf8");
-  const dat = JSON.parse(manifest);
-
-  if (dat["main"]) {
-    hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets["manifest.main"], JSON.stringify(dat["main"])));
-  }
-  if (dat["scripts"]) {
-    hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets["manifest.scripts"], JSON.stringify(dat["scripts"])));
-  }
-
-  function explore(dir) {
-    fs.readdirSync(dir).forEach((file) => {
-      const absolute = path.join(dir, file);
-      if (fs.statSync(absolute).isDirectory()) {
-        explore(absolute);
-      } else {
-        if (['.coffee', '.js', '.jsx', '.ts', '.tsx', '.mjs', '.json'].includes(path.extname(absolute))) {
-          hits = hits.concat(await regexRuleSetsScan(Global.dependencyRegexRuleSets["check"], absolute));
-        }
-      }
-    });
-  }
-
-  explore(path.join(dir, "node_modules"));
-
-  return hits;
 }
 
 //Rulesets loading and validation functions
