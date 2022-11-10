@@ -37,6 +37,7 @@ async function semgrepRuleSetsScan(configs, path, exclude = null) {
         },
         message: result.extra.message,
         ...(result.extra.fix && { fix: result.extra.fix }),
+        ...(result.metadata.reference && { reference: result.metadata.reference }),
         id: result.check_id,
       });
     }
@@ -90,6 +91,7 @@ async function regexRuleScan(rule, path) {
           },
           message: rule.message,
           ...(rule.fix && { fix: rule.fix }),
+          ...(rule.reference && { reference: rule.reference }),
           id: rule.id,
         });
       }
@@ -100,6 +102,7 @@ async function regexRuleScan(rule, path) {
           line_no: line_no,
           message: rule.message,
           ...(rule.fix && { fix: rule.fix }),
+          ...(rule.reference && { reference: rule.reference }),
           id: rule.id,
         });
       }
@@ -238,6 +241,7 @@ function _loadRegexRuleSet(path) {
       f_severity = false,
       f_regex = false,
       f_fix = false,
+      f_reference = false;
       regex_type = "";
     for (const propertyName of propertyNames) {
       if (propertyName === "id") {
@@ -266,6 +270,9 @@ function _loadRegexRuleSet(path) {
       } else if (propertyName === "fix") {
         //Optional
         f_fix = true;
+      } else if (propertyName === "reference") {
+        //Optional
+        f_reference = true;
       } else {
         throw "Unknown property name " + propertyName;
       }

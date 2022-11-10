@@ -2,12 +2,14 @@ rules:
   - id: test-regex-and
     message: 'regex AND expression'
     severity: WARNING
+    reference: "https://www.yahoo.com"
     regex:
       - regex: '\bSELECT\b'
       - regex_and: '\buser_name\b'
   - id: test-regex-nested
     message: 'regex nested expression. PURCHASES && (SELECT || UPDATE || INSERT) && user_name && !product_name'
     severity: WARNING
+    reference: "https://www.facebook.com"
     regex:
       - regex: '\bpurchases\b'
       - regex_or:
