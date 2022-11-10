@@ -14,5 +14,4 @@ rules:
       - regex: '\bchown\b'
       - regex: '\bchmod\b'
     
-#   packageManifestObject.scripts || {}
 # CASE Insensitive
