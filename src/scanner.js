@@ -1,4 +1,4 @@
-const { getDisabledRules, setDisabledRules } = require("./settings");
+const { getDisabledRules, setDisabledRules, getUserRulesets } = require("./settings");
 const promisify = require("util").promisify;
 const execFile = require("child_process").execFile;
 const path = require("path");
@@ -173,6 +173,19 @@ function getFilesRecursively(top_dir) {
   }
   explore(top_dir);
   return files;
+}
+
+function getPathType(path) {
+  try {
+    var stat = fs.lstatSync(path);
+    if (stat.isDirectory()) {
+      return 1; //Directory
+    } else {
+      return 0; //File
+    }
+  } catch (error) {
+    return 2; //Path does not exist
+  }
 }
 
 //Rulesets loading and validation functions
@@ -367,15 +380,55 @@ function validRuleSet(path) {
 
 //Initialize and abstract away backend for frontend
 function initScanner(context) {
-  //TODO: Figure out proper subdirectory names
-  var disabled = getDisabledRules(context); //Load disabled.json into memory
+  //Load disabled.json into memory
+  var disabled = getDisabledRules(context);
 
-  loadRegexRuleSets(path.join(context.extensionPath, "files", "regex_rules")); //Load all the rules into memory
+  //Load all user-created RuleSets into memory
+  var userRulesets = getUserRulesets(context);
 
+  //Load all Regex RuleSets into memory
+  loadRegexRuleSets(path.join(context.extensionPath, "files", "regex_rules"));
+  if (userRulesets["regex"]) { //There are user-created Regex RuleSets
+    for (const regexRuleset of userRulesets["regex"]) {
+      const pathType = getPathType(regexRuleset);
+      if (pathType === 0) { //File
+        loadRegexRuleSet(regexRuleset);
+      } else if (pathType === 1) { //Directory
+        loadRegexRuleSets(regexRuleset);
+      } else {
+        console.error(
+          "Unable to load user-created Regex RuleSet",
+          regexRuleset,
+          "since it could not be found"
+        );
+        let tmp = { path: regexRuleset }; //Only store path
+        Global.regexRuleSets.push(tmp);
+      }
+    }
+  }
+
+  //Load all Semgrep RuleSets into memory (if possible)
   if (Global.semgrepServer) {
     loadSemgrepRuleSets(
       path.join(context.extensionPath, "files", "semgrep_rules")
     );
+    if (userRulesets["semgrep"]) { //There are user-created Semgrep RuleSets
+      for (const semgrepRuleset of userRulesets["semgrep"]) {
+        const pathType = getPathType(semgrepRuleset);
+        if (pathType === 0) { //File
+          loadSemgrepRuleSet(semgrepRuleset);
+        } else if (pathType === 1) { //Directory
+          loadSemgrepRuleSets(semgrepRuleset);
+        } else {
+          console.error(
+            "Unable to load user-created Semgrep RuleSet",
+            semgrepRuleset,
+            "since it could not be found"
+          );
+          Global.semgrepRuleSets.push(semgrepRuleset);
+        }
+      }
+    }
   }
 
   var cleanedDisabled = [];
