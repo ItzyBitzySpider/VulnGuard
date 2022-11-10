@@ -163,12 +163,52 @@ function applyRegexCheck(node, parent_type, text) {
 }
 
 //Dependency Check
+function npmRegistryCheck(packageName, filePath) {
+  return new Promise((resolve, reject) => {
+    const data = fs.readFileSync(filePath, 'utf8')
+    const packageManifest = JSON.parse(data)
+    const currentVersion = packageManifest.version
+    let result = null
+
+    https.get(`https://registry.npmjs.org/${packageName}`, (response) => {
+      if (response.status >= 400) {
+        reject(new Error(`Request to ${response.url} failed with HTTP ${response.status}`))
+      }
+
+      var body = ''
+
+      response.on('data', (chunk) => {
+        body += chunk.toString()
+      })
+
+      response.on('end', () => {
+        const packageInfo = JSON.parse(body)
+        const versions = Object.keys(packageInfo.time)
+        const previousVersion = versions[versions.indexOf(currentVersion) - 1]
+        const currentVersionDate = new Date(packageInfo.time[currentVersion])
+        const previousVersionDate = new Date(packageInfo.time[previousVersion])
+
+        if (currentVersionDate - previousVersionDate > 63072000000) {
+          result = {
+            id: 'lastUpdated',
+            message: 'Unusually long time between previous and current version',
+            reference: 'https://snyk.io/blog/malicious-code-found-in-npm-package-event-stream/',
+          }
+        }
+
+        resolve(result)
+      })
+    })
+  })
+}
+
 async function analyzePackage(dir) {
   var finalHits = [];
 
   var modulePaths = getTopLevelDirectories(path.join(dir, "node_modules"));
   for (const modulePath of modulePaths) {
     var hits = [];
+    const moduleName = path.basename(modulePath);
 
     const manifest = fs.readFileSync(path.join(modulePath, "package.json"), "utf8");
     const dat = JSON.parse(manifest);
@@ -191,6 +231,12 @@ async function analyzePackage(dir) {
         id: "no-source-code-repository",
       });
     }
+
+    await npmRegistryCheck(moduleName, path.join(modulePath, "package.json"))
+      .then(
+        resolve => hits.push(resolve),
+        reject => console.warn("Unable to perform npm registry check on module", moduleName, "due to", reject)
+      );
       
     var files = getFilesRecursively(modulePath);
     for (const file of files) {
@@ -207,7 +253,7 @@ async function analyzePackage(dir) {
       }
     }
 
-    finalHits[modulePath] = hits;
+    finalHits[moduleName] = hits;
   }
   return finalHits;
 }
