@@ -214,7 +214,7 @@ function npmRegistryCheck(packageName, filePath) {
   });
 }
 
-async function analyzePackage(dir) {
+export async function analyzePackage(dir) {
   var finalHits = [];
 
   var modulePaths = getTopLevelDirectories(path.join(dir, "node_modules"));
@@ -733,4 +733,5 @@ module.exports = {
   initDependencyScanner,
   regexRuleSetsScan,
   semgrepRuleSetsScan,
+  analyzePackage,
 };
