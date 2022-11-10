@@ -61,16 +61,6 @@ async function activate(context) {
     new FixVulnCodeActionProvider()
   );
 
-  // scanFile(context, vscode.window.activeTextEditor.document.uri.fsPath).then(
-  //   () => {
-  //     diagnostics.initWindowDiagnostics(
-  //       Global.vulnDiagnostics,
-  //       vscode.window.visibleTextEditors,
-  //       vscode.window.activeTextEditor
-  //     );
-  //   }
-  // );
-  // TODO possibly scan entire workspace on start?
   scanWorkspace(context).then(() => {
     diagnostics.initWindowDiagnostics(
       vscode.window.visibleTextEditors,
@@ -138,6 +128,9 @@ async function activate(context) {
   context.subscriptions.push(
     vscode.commands.registerCommand("vulnguard.dashboard", () =>
       createWebview(context)
+    ),
+    vscode.commands.registerCommand("vulnguard.docs", (uri) =>
+      vscode.env.openExternal(uri)
     ),
     //onCreate
     watcher.onDidCreate((uri) => {
