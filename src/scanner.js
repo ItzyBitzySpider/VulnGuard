@@ -173,7 +173,7 @@ async function analyzePackage(dir) {
     const manifest = fs.readFileSync(path.join(modulePath, "package.json"), "utf8");
     const dat = JSON.parse(manifest);
 
-    //TODO: Remove line numbers since they are completely wrong
+    //TODO: Remove line numbers, and range since they are completely wrong
     if (dat["main"]) {
       hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets["manifest.main"], JSON.stringify(dat["main"])));
     }
@@ -188,6 +188,7 @@ async function analyzePackage(dir) {
         hits = hits.concat(await regexRuleSetsScan(Global.dependencyRegexRuleSets["check"], file));
       } else if (['.sh', '.bash', '.bat', '.cmd'].includes(ext)) {
         hits.push({
+          //TODO add reference
           severity: "WARNING",
           message: "Package includes OS scripts - you should verify them",
           id: "has-os-scripts",
