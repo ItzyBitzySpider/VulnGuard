@@ -206,8 +206,12 @@ function analyzePackage(dir) {
   const manifest = fs.readFileSync(path.join(dir, "package.json"), "utf8");
   const dat = JSON.parse(manifest);
 
-  hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets.get("manifest.main"), JSON.stringify(dat["main"])));
-  hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets.get("manifest.scripts"), JSON.stringify(dat["scripts"])));
+  if (dat["main"]) {
+    hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets["manifest.main"], JSON.stringify(dat["main"])));
+  }
+  if (dat["scripts"]) {
+    hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets["manifest.scripts"], JSON.stringify(dat["scripts"])));
+  }
 
   function explore(dir) {
     fs.readdirSync(dir).forEach((file) => {
@@ -216,7 +220,7 @@ function analyzePackage(dir) {
         explore(absolute);
       } else {
         if (['.coffee', '.js', '.jsx', '.ts', '.tsx', '.mjs', '.json'].includes(path.extname(absolute))) {
-          hits = hits.concat(await regexRuleSetsScan(Global.dependencyRegexRuleSets.get("check", absolute)));
+          hits = hits.concat(await regexRuleSetsScan(Global.dependencyRegexRuleSets["check"], absolute));
         }
       }
     });
