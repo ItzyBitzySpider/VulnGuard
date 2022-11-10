@@ -1,7 +1,6 @@
 const vscode = require("vscode");
 const Global = require("./globals");
 const { toKebabCase } = require("./utils");
-const { getVulns } = require("./vuln");
 
 let activeEditor = undefined;
 
@@ -33,9 +32,8 @@ function initWindowDiagnostics(editors, active) {
 function updateDiagnostics(editors) {
   if (!editors) return;
   editors.forEach((editor) => {
-    const storedVulns = getVulns();
-    if (!storedVulns.has(editor.document.uri.fsPath)) return;
-    const docVulns = storedVulns.get(editor.document.uri.fsPath);
+    if (!Global.vulns.has(editor.document.uri.fsPath)) return;
+    const docVulns = Global.vulns.get(editor.document.uri.fsPath);
     const diagnostics = [];
     docVulns.forEach((vuln) => {
       let range = undefined;

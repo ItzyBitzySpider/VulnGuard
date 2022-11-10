@@ -7,7 +7,7 @@ const Global = require("./globals");
 const { FixVulnCodeActionProvider } = require("./codeaction");
 const { setFeature, getFeatures, getUserRulesets } = require("./settings");
 const { scanWorkspace, scanFile } = require("./scanTrigger");
-const { renameVulns, deleteVulns } = require("./vuln");
+const { renameVulns, deleteVulns } = require("./utils");
 const {
   initScanner,
   regexRuleSetsScan,

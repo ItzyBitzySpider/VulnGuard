@@ -9,7 +9,6 @@ const {
   addUserRuleset,
 } = require("./settings");
 const Global = require("./globals");
-const { getVulns } = require("./vuln");
 const { getTitleFromPath, Feature } = require("./feature");
 const { enableRuleSet, disableRuleSet } = require("./scanner");
 
@@ -197,7 +196,7 @@ function updateWebview(context) {
   let error = 0,
     warning = 0,
     alert = 0;
-  getVulns().forEach((v) => {
+  Global.vulns.forEach((v) => {
     v.forEach((vuln) => {
       switch (vuln.severity) {
         case "ERROR":

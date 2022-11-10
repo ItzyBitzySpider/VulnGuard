@@ -1,6 +1,7 @@
 const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
+const Global = require("./globals");
 
 function getGlobalPath(context) {
   const dir = context.globalStorageUri.fsPath;
@@ -73,7 +74,7 @@ function addIgnoredRegex(context, regex) {
   ignoredRegex.push(regex);
   vscode.workspace
     .findFiles(regex, `${ignoredRegex.join(",")}}`)
-    .then((uris) => require("./vuln").deleteVulns(uris));
+    .then((uris) => Global.vulns.deleteVulns(uris));
 
   const ignoredPath = getIgnoredRegexPath(context);
   fs.writeFile(ignoredPath, ignoredRegex.join("\n"), function (err) {
