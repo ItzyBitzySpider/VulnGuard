@@ -4,6 +4,6 @@ rules:
     message: 'Child process creation'
     severity: WARNING
     reference: 'https://news.ycombinator.com/item?id=17283394'
-    regex: 'child_process'
+    regex: '\bchild_process\b'
 
     # CASE Insensitive
