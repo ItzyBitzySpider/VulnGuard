@@ -36,7 +36,8 @@ async function scanWorkspace(context) {
 }
 async function scanFile(context, filePath) {
   vscode.workspace.workspaceFolders.forEach((f) => {
-    if (filePath.startsWith(f)) filePath = filePath.replace(f, "");
+    const fs = f.uri.fsPath + path.sep;
+    if (filePath.startsWith(fs)) filePath = filePath.replace(fs, "");
   });
   const uris = await vscode.workspace.findFiles(
     filePath,
@@ -44,6 +45,7 @@ async function scanFile(context, filePath) {
     1
   );
   if (uris.length > 0) await scan(uris[0].fsPath);
+  else console.warn("Cannot scan file: ", filePath);
 }
 
 module.exports = {
