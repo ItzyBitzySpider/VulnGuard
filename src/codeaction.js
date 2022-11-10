@@ -16,8 +16,8 @@ class FixVulnCodeActionProvider {
 
   provideCodeActions(document, range, context, token) {
     const outputActions = [];
-    context.diagnostics.forEach((diagnostic) => 
-       outputActions.push(...this.createCodeAction(document, diagnostic));
+    context.diagnostics.forEach((diagnostic) =>
+      outputActions.push(...this.createCodeAction(document, diagnostic))
     );
     return outputActions;
   }
