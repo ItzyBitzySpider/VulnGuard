@@ -1,13 +1,9 @@
 rules:
-  - id: test-regex-exp
-    message: 'simple regex expression'
-    severity: WARNING
-    reference: "https://www.google.com"
-    regex: '\bdb.many\b'
   - id: test-regex-or
     message: 'regex OR expression'
     severity: WARNING
     reference: "https://www.bing.com"
+    case_sensitive: true
     regex:
       - regex_or:
         - regex: '\bdb.many\b'

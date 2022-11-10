@@ -4,4 +4,5 @@ rules:
     message: 'jjencode code obfuscation'
     severity: WARNING
     reference: 'https://www.symantec.com/connect/blogs/short-sharp-spam-attacks-aiming-spread-dyre-financial-malware/'
+    case_sensitive: false
     regex: '\$=~\[\];\$=\{[_]{3}:[+]{2}\$,[$]{4}:\(!\[\]\+["]{2}\)'
