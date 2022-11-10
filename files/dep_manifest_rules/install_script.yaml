@@ -1,0 +1,14 @@
+# Taken from https://github.com/spaceraccoon/npm-scan/
+rules:
+  - id: install-scripts
+    message: 'Package includes install scripts - you should verify them'
+    severity: WARNING
+    reference: 'https://blog.usejournal.com/12-strange-things-that-can-happen-after-installing-an-npm-package-45de7fbf39f0'
+    regex_or:
+      - regex: '\bpreinstall\b'
+      - regex: '\binstall\b'
+      - regex: '\bpostinstall\b'
+      - regex: '\bpreuninstall\b'
+      - regex: '\bpostuninstall\b'
+    
+#  if (packageManifest.scripts && Object.keys(packageManifest.scripts).some(script => installScripts.includes(script))) {
