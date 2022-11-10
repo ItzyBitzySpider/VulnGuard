@@ -71,6 +71,9 @@ function getIgnoredRegex(context) {
 function addIgnoredRegex(context, regex) {
   regex = regex.replaceAll("\\", "/");
   ignoredRegex.push(regex);
+  vscode.workspace
+    .findFiles(regex, `${ignoredRegex.join(",")}}`)
+    .then((uris) => require("./vuln").deleteVulns(uris));
   const ignoredPath = getIgnoredRegexPath(context);
   fs.writeFile(ignoredPath, ignoredRegex.join("\n"), function (err) {
     if (err) return console.log(err);
@@ -78,7 +81,8 @@ function addIgnoredRegex(context, regex) {
   });
 }
 function deleteIgnoredRegex(context, idx) {
-  ignoredRegex.splice(idx, 1);
+  const removedIgnore = ignoredRegex.splice(idx, 1);
+  require("./scanTrigger").scanIgnored(context, removedIgnore[0]);
   const ignoredPath = getIgnoredRegexPath(context);
   fs.writeFile(ignoredPath, ignoredRegex.join("\n"), function (err) {
     if (err) return console.log(err);

@@ -1,4 +1,5 @@
 const { Feature } = require("./feature");
+const vscode = require("vscode");
 
 const featureList = [];
 /**
@@ -16,6 +17,8 @@ var enabledRegexRuleSets = [];
 var enabledSemgrepRuleSets = [];
 var semgrepServer = undefined;
 
+var vulnDiagnostics = vscode.languages.createDiagnosticCollection("vulns");
+
 module.exports = {
   getFeatureList,
   FIX_VULN_CODE,
@@ -24,4 +27,5 @@ module.exports = {
   enabledRegexRuleSets,
   enabledSemgrepRuleSets,
   semgrepServer,
+  vulnDiagnostics,
 };

@@ -101,7 +101,6 @@ function createWebview(context) {
             }
           } else {
             //Enabling/disabling rules
-            console.log(message);
             message.value === "true"
               ? enableRuleSet(context, message.rule)
               : disableRuleSet(context, message.rule);

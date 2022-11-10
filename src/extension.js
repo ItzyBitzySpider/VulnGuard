@@ -61,30 +61,28 @@ async function activate(context) {
   );
 
   const watcher = vscode.workspace.createFileSystemWatcher("**/*.js");
-  const vulnDiagnostics = vscode.languages.createDiagnosticCollection("vulns");
   const vulnCodeActions = vscode.languages.registerCodeActionsProvider(
     { language: "javascript", scheme: "file" },
     new FixVulnCodeActionProvider()
   );
 
-  scanFile(context, vscode.window.activeTextEditor.document.uri.fsPath).then(
-    () => {
-      diagnostics.initWindowDiagnostics(
-        vulnDiagnostics,
-        vscode.window.visibleTextEditors,
-        vscode.window.activeTextEditor
-      );
-    }
-  );
+  // scanFile(context, vscode.window.activeTextEditor.document.uri.fsPath).then(
+  //   () => {
+  //     diagnostics.initWindowDiagnostics(
+  //       Global.vulnDiagnostics,
+  //       vscode.window.visibleTextEditors,
+  //       vscode.window.activeTextEditor
+  //     );
+  //   }
+  // );
   // TODO possibly scan entire workspace on start?
-  // scanWorkspace(context).then(() => {
-  //   diagnostics.initWindowDiagnostics(
-  //     vulnDiagnostics,
-  //     vscode.window.visibleTextEditors,
-  //     vscode.window.activeTextEditor
-  //   );
-  //   updateWebview(context);
-  // });
+  scanWorkspace(context).then(() => {
+    diagnostics.initWindowDiagnostics(
+      vscode.window.visibleTextEditors,
+      vscode.window.activeTextEditor
+    );
+    updateWebview(context);
+  });
 
   //onSave active document
   // vscode.workspace.onDidSaveTextDocument(
@@ -103,10 +101,7 @@ async function activate(context) {
       if (changeTimer) clearTimeout(changeTimer);
       changeTimer = setTimeout(() => {
         scanFile(context, event.document.uri.fsPath).then(() => {
-          diagnostics.handleActiveEditorTextChange(
-            event.document,
-            vulnDiagnostics
-          );
+          diagnostics.handleActiveEditorTextChange(event.document);
           updateWebview(context);
         });
       }, 1500);
@@ -116,12 +111,12 @@ async function activate(context) {
   );
   // Change tab
   vscode.window.onDidChangeActiveTextEditor(
-    (editor) => diagnostics.handleChangeActiveEditor(editor, vulnDiagnostics),
+    diagnostics.handleChangeActiveEditor,
     null,
     context.subscriptions
   );
   vscode.workspace.onDidCloseTextDocument(
-    (document) => diagnostics.handleDocumentClose(document, vulnDiagnostics),
+    diagnostics.handleDocumentClose,
     null,
     context.subscriptions
   );
@@ -154,7 +149,7 @@ async function activate(context) {
       if (uri.scheme !== "file") return;
       scanFile(context, uri.fsPath).then(() => updateWebview(context));
     }),
-    vulnDiagnostics,
+    Global.vulnDiagnostics,
     vulnCodeActions
   );
 }

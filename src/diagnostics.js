@@ -1,5 +1,5 @@
 const vscode = require("vscode");
-const { FIX_VULN_CODE } = require("./globals");
+const Global = require("./globals");
 const { getVulns } = require("./vuln");
 
 let activeEditor = undefined;
@@ -9,32 +9,27 @@ const SEVERITY = {
   WARNING: vscode.DiagnosticSeverity.Warning,
   INFO: vscode.DiagnosticSeverity.Information,
 };
-/**
- *
- * @param {vscode.DiagnosticCollection} vulnDiagnostics
- */
-function clearDiagnostics(vulnDiagnostics) {
-  if (activeEditor) vulnDiagnostics.clear();
+
+function clearDiagnostics() {
+  if (activeEditor) Global.vulnDiagnostics.clear();
 }
 
 /**
  *
- * @param {vscode.DiagnosticCollection} vulnDiagnostics
  * @param {vscode.TextEditor[]} editors
  * @param {vscode.TextEditor} active
  */
-function initWindowDiagnostics(vulnDiagnostics, editors, active) {
+function initWindowDiagnostics(editors, active) {
   activeEditor = active;
-  updateDiagnostics(vulnDiagnostics, editors);
+  updateDiagnostics(editors);
 }
 
 /**
  *
- * @param {vscode.DiagnosticCollection} vulnDiagnostics
  * @param {vscode.TextEditor[]} editors
  * @returns
  */
-function updateDiagnostics(vulnDiagnostics, editors) {
+function updateDiagnostics(editors) {
   if (!editors) return;
   editors.forEach((editor) => {
     const storedVulns = getVulns();
@@ -56,39 +51,36 @@ function updateDiagnostics(vulnDiagnostics, editors) {
         range: range,
         message: vuln.message,
         source: "VulnGuard",
-        tags: vuln.fix ? [FIX_VULN_CODE] : undefined,
+        tags: vuln.fix ? [Global.FIX_VULN_CODE] : undefined,
       };
     });
-    vulnDiagnostics.set(editor.document.uri, diagnostics);
+    Global.vulnDiagnostics.set(editor.document.uri, diagnostics);
   });
 }
 
 /**
  * @param {vscode.TextEditor} editor
- * @param {vscode.DiagnosticCollection} vulnDiagnostics
  */
-function handleChangeActiveEditor(editor, vulnDiagnostics) {
+function handleChangeActiveEditor(editor) {
   activeEditor = editor;
-  if (editor) updateDiagnostics(vulnDiagnostics, [editor]);
-  else clearDiagnostics(vulnDiagnostics);
+  if (editor) updateDiagnostics([editor]);
+  else clearDiagnostics();
 }
 
 /**
  * @param {vscode.TextDocument} document
- * @param {vscode.DiagnosticCollection} vulnDiagnostics
  */
-function handleActiveEditorTextChange(document, vulnDiagnostics) {
+function handleActiveEditorTextChange(document) {
   if (activeEditor && document === activeEditor.document) {
-    updateDiagnostics(vulnDiagnostics, [activeEditor]);
-  } else clearDiagnostics(vulnDiagnostics);
+    updateDiagnostics([activeEditor]);
+  } else clearDiagnostics();
 }
 
 /**
  * @param {vscode.TextDocument} document
- * @param {vscode.DiagnosticCollection} vulnDiagnostics
  */
-function handleDocumentClose(document, vulnDiagnostics) {
-  vulnDiagnostics.delete(document.uri);
+function handleDocumentClose(document) {
+  Global.vulnDiagnostics.delete(document.uri);
 }
 
 module.exports = {

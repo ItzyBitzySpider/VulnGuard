@@ -1,5 +1,6 @@
 const path = require("path");
 const { scanFile } = require("./scanTrigger");
+const Globals = require("./globals");
 
 const vulns = new Map();
 /**
@@ -52,11 +53,19 @@ function renameVulns(context, oldPath, newPath) {
     return;
   }
 }
-function deleteVulns(fsPath) {
-  if (fsPath.endsWith(".js")) vulns.delete(fsPath);
+function deleteVulns(uri) {
+  //Array deletion
+  if (typeof uri !== "string") {
+    uri.forEach((u) => {
+      if (vulns.has(u.fsPath)) vulns.delete(u.fsPath);
+      if (Globals.vulnDiagnostics.has(u)) Globals.vulnDiagnostics.delete(u);
+    });
+  } else if (uri.endsWith(".js")) vulns.delete(uri);
   else
     vulns.forEach((v, k) => {
-      if (k.startsWith(fsPath + path.sep)) vulns.delete(k);
+      if (k.startsWith(uri.fsPath + path.sep)) {
+        vulns.delete(k);
+      }
     });
 }
 

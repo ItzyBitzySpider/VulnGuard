@@ -14,7 +14,19 @@ async function scan(fsPath) {
   }
   const { getVulns } = require("./vuln");
   getVulns().set(fsPath, tmpVulnList);
-  console.log(getVulns());
+}
+
+async function scanIgnored(context, ignored) {
+  const search = ignored.endsWith(".js")
+    ? ignored
+    : path.join(ignored, "*.js").replaceAll("\\", "/");
+  const uris = await vscode.workspace.findFiles(
+    search,
+    `{${getIgnoredRegex(context).join(",")}}`
+  );
+  console.log("Rescanning", search);
+  console.log(uris);
+  await Promise.all(uris.map((uri) => scan(uri.fsPath)));
 }
 
 async function scanWorkspace(context) {
@@ -25,11 +37,11 @@ async function scanWorkspace(context) {
   await Promise.all(uris.map((uri) => scan(uri.fsPath)));
 }
 async function scanFile(context, filePath) {
+  vscode.workspace.workspaceFolders.forEach((f) => {
+    if (filePath.startsWith(f)) filePath = filePath.replace(f, "");
+  });
   const uris = await vscode.workspace.findFiles(
-    new vscode.RelativePattern(
-      path.dirname(filePath).replaceAll("\\", "/"),
-      path.basename(filePath)
-    ),
+    filePath,
     `{${getIgnoredRegex(context).join(",")}}`,
     1
   );
@@ -39,4 +51,5 @@ async function scanFile(context, filePath) {
 module.exports = {
   scanWorkspace,
   scanFile,
+  scanIgnored,
 };
