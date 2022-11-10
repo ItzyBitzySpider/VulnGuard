@@ -81,7 +81,7 @@ async function activate(context) {
       vscode.window.visibleTextEditors,
       vscode.window.activeTextEditor
     );
-    updateWebview(context);
+    createWebview(context);
   });
 
   //onSave active document
