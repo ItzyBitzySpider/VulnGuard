@@ -1,6 +1,6 @@
-const { DiagnosticCategory } = require("typescript");
 const vscode = require("vscode");
 
+//TODO ignore file action
 class FixVulnCodeActionProvider {
   constructor() {
     this.providedCodeActionKinds = [vscode.CodeActionKind.QuickFix];
