@@ -188,6 +188,26 @@ function getPathType(path) {
   }
 }
 
+function analyzePackage(dir) {
+  const manifest = fs.readFileSync(path.join(dir, "package.json"), "utf8");
+  const dat = JSON.parse(manifest); //TODO
+
+  function explore(dir) {
+    fs.readdirSync(dir).forEach((file) => {
+      const absolute = path.join(dir, file);
+      if (fs.statSync(absolute).isDirectory()) {
+        explore(absolute);
+      } else {
+        if (['.coffee', '.js', '.jsx', '.ts', '.tsx', '.mjs', '.json'].includes(path.extname(absolute))) {
+          const dat = fs.readFileSync(absolute, "utf8"); //TODO
+        }
+      }
+    });
+  }
+
+  explore(path.join(dir, "node_modules"));
+}
+
 //Rulesets loading and validation functions
 function validateRegexTree(node) {
   for (const field of node) {
