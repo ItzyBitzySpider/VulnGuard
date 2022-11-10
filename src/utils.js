@@ -55,7 +55,6 @@ function deleteVulns(uri) {
     });
 }
 
-//TODO update diagnostics
 function deleteVulnsWithFeature(featureId) {
   Global.vulns.forEach((vulnList, file) => {
     Global.vulns.set(

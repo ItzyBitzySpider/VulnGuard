@@ -104,7 +104,7 @@ function getDisabledRulesPath(context) {
  * @param {vscode.ExtensionContext} context
  */
 function getDisabledRules(context) {
-  if (disabledRules) return disabledRules;
+  if (disabledRules) return [...disabledRules];
   if (!context) return undefined;
 
   const disabledRulesPath = getDisabledRulesPath(context);

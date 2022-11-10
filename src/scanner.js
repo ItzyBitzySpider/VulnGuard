@@ -37,7 +37,9 @@ async function semgrepRuleSetsScan(configs, path, exclude = null) {
         },
         message: result.extra.message,
         ...(result.extra.fix && { fix: result.extra.fix }),
-        ...(result.metadata.reference && { reference: result.metadata.reference }),
+        ...(result.metadata.reference && {
+          reference: result.metadata.reference,
+        }),
         id: result.check_id,
       });
     }
@@ -242,7 +244,7 @@ function _loadRegexRuleSet(path) {
       f_regex = false,
       f_fix = false,
       f_reference = false;
-      regex_type = "";
+    regex_type = "";
     for (const propertyName of propertyNames) {
       if (propertyName === "id") {
         f_id = true;
@@ -464,7 +466,10 @@ function enableRuleSet(context, path) {
           tmp = _loadRegexRuleSet(path);
         } catch (error) {
           vscode.window.showErrorMessage(
-            "Unable to re-enable Regex RuleSet " + path + " due to error: " + error
+            "Unable to re-enable Regex RuleSet " +
+              path +
+              " due to error: " +
+              error
           );
           console.error(
             "Unable to re-enable Regex RuleSet " +
