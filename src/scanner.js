@@ -246,7 +246,7 @@ async function analyzePackage(dir) {
 
     await npmRegistryCheck(moduleName, path.join(modulePath, "package.json"))
       .then(
-        resolve => hits.push(resolve),
+        resolve => hits.concat(resolve),
         reject => console.warn("Unable to perform npm registry check on module", moduleName, "due to", reject)
       );
       
