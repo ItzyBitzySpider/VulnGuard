@@ -1,0 +1,17 @@
+# Taken from https://github.com/mbalabash/sdc-check
+rules:
+  - id: dangerous-shell-commands
+    message: 'Package includes dangerous shell commands'
+    severity: WARNING
+    regex_or:
+      - regex: '\bwget\b'
+      - regex: '\bcurl\b'
+      - regex: '\bInvoke-WebRequest\b'
+      - regex: '\bSystem.Net.WebClient\b'
+      - regex: '\bbitsadmin\b'
+      - regex: '\calcs\b'
+      - regex: '\btakeown\b'
+      - regex: '\bchown\b'
+      - regex: '\bchmod\b'
+    
+#   packageManifestObject.scripts || {}
