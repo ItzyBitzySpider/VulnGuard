@@ -12,8 +12,7 @@ async function scan(fsPath) {
     const vuln = await feature.scanForVulns(fsPath);
     if (vuln) tmpVulnList.push(...vuln);
   }
-  const { getVulns } = require("./vuln");
-  getVulns().set(fsPath, tmpVulnList);
+  require("./vuln").getVulns().set(fsPath, tmpVulnList);
 }
 
 async function scanIgnored(context, ignored) {
@@ -34,6 +33,7 @@ async function scanWorkspace(context) {
   );
   await Promise.all(uris.map((uri) => scan(uri.fsPath)));
 }
+
 async function scanFile(context, filePath) {
   vscode.workspace.workspaceFolders.forEach((f) => {
     const fs = f.uri.fsPath + path.sep;

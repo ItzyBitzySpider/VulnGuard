@@ -41,7 +41,7 @@ function getFeatures(context) {
  */
 function setFeature(context, feature, enabled) {
   features[feature] = enabled;
-
+  require("./scanTrigger").scanWorkspace(context);
   const featuresPath = getFeaturesPath(context);
   fs.writeFile(featuresPath, JSON.stringify(features), function (err) {
     if (err) return console.log(err);
@@ -74,6 +74,7 @@ function addIgnoredRegex(context, regex) {
   vscode.workspace
     .findFiles(regex, `${ignoredRegex.join(",")}}`)
     .then((uris) => require("./vuln").deleteVulns(uris));
+
   const ignoredPath = getIgnoredRegexPath(context);
   fs.writeFile(ignoredPath, ignoredRegex.join("\n"), function (err) {
     if (err) return console.log(err);

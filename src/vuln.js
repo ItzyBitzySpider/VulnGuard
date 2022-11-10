@@ -61,9 +61,9 @@ function deleteVulns(uri) {
     });
   } else if (uri.endsWith(".js")) vulns.delete(uri);
   else
-    vulns.forEach((v, k) => {
-      if (k.startsWith(uri.fsPath + path.sep)) {
-        vulns.delete(k);
+    vulns.forEach((v, filename) => {
+      if (filename.startsWith(uri.fsPath + path.sep)) {
+        vulns.delete(filename);
       }
     });
 }
