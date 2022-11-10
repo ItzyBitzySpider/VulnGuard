@@ -10,6 +10,7 @@ const { scanWorkspace, scanFile } = require("./scanTrigger");
 const { renameVulns, deleteVulns } = require("./utils");
 const {
   initScanner,
+  initDependencyScanner,
   regexRuleSetsScan,
   semgrepRuleSetsScan,
 } = require("./scanner");
@@ -27,6 +28,7 @@ async function activate(context) {
     setFeature(context, "semgrep", false);
 
   initScanner(context);
+  initDependencyScanner(context);
   setFeatureContext(context);
 
   getUserRulesets(context);

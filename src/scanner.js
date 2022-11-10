@@ -8,6 +8,8 @@ const yaml = require("yaml");
 const execFileAsync = promisify(execFile);
 const Global = require("./globals");
 const vscode = require("vscode");
+const crypto = require("crypto");
+const os = require("os");
 
 //SEMGREP FUNCTION
 async function semgrepRuleSetsScan(configs, path, exclude = null) {
@@ -48,6 +50,10 @@ async function semgrepRuleSetsScan(configs, path, exclude = null) {
 }
 
 //REGEX FUNCTION
+async function regexRuleSetsScanText(ruleSets, text) { //TODO: Find better way
+  return await regexRuleSetsScan(ruleSets, writeToTempFile(text));
+}
+
 async function regexRuleSetsScan(ruleSets, path) {
   var hits = [];
   const promises = ruleSets.map((ruleSet) => {
@@ -157,6 +163,12 @@ function applyRegexCheck(node, parent_type, text) {
 }
 
 //Misc Functions
+function writeToTempFile(text) {
+  const tmpPath = path.join(os.tmpdir(), crypto.randomBytes(16).toString('hex'));
+  fs.writeFileSync(tmpPath, text, "utf8");
+  return tmpPath;
+}
+
 function getFilesRecursively(top_dir) {
   if (!fs.existsSync(top_dir)) {
     console.warn("Directory not found: " + top_dir);
@@ -189,8 +201,13 @@ function getPathType(path) {
 }
 
 function analyzePackage(dir) {
+  var hits = [];
+
   const manifest = fs.readFileSync(path.join(dir, "package.json"), "utf8");
-  const dat = JSON.parse(manifest); //TODO
+  const dat = JSON.parse(manifest);
+
+  hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets.get("manifest.main"), JSON.stringify(dat["main"])));
+  hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets.get("manifest.scripts"), JSON.stringify(dat["scripts"])));
 
   function explore(dir) {
     fs.readdirSync(dir).forEach((file) => {
@@ -199,13 +216,15 @@ function analyzePackage(dir) {
         explore(absolute);
       } else {
         if (['.coffee', '.js', '.jsx', '.ts', '.tsx', '.mjs', '.json'].includes(path.extname(absolute))) {
-          const dat = fs.readFileSync(absolute, "utf8"); //TODO
+          hits = hits.concat(await regexRuleSetsScan(Global.dependencyRegexRuleSets.get("check", absolute)));
         }
       }
     });
   }
 
   explore(path.join(dir, "node_modules"));
+
+  return hits;
 }
 
 //Rulesets loading and validation functions
@@ -580,10 +599,39 @@ function enableRuleSet(context, path) {
   setDisabledRules(context, disabled); //Update disabled.json
 }
 
+function initDependencyScanner(context) {
+  //Helper Functions (TODO: Cleanup and remove hacky mess)
+  function loadDependencyRegexRuleSet(path, dependencyType) {
+    //Wrap around function _loadRegexRuleSet() to catch exceptions thrown
+    try {
+      var tmp = _loadRegexRuleSet(path);
+      if (!Global.dependencyRegexRuleSets[dependencyType]) Global.dependencyRegexRuleSets[dependencyType] = [];
+      Global.dependencyRegexRuleSets[dependencyType].push(tmp);
+    } catch (error) {
+      throw "Unable to load Dependency (", dependencyType, ") Regex RuleSet", path, "due to error:", error;
+    }
+  }
+
+  function loadDependencyRegexRuleSets(dir, dependencyType) {
+    var files = getFilesRecursively(dir);
+    for (const file of files) {
+      loadDependencyRegexRuleSet(file, dependencyType);
+    }
+  }
+
+  //Load all Dependency Regex RuleSets into memory
+  loadDependencyRegexRuleSets(path.join(context.extensionPath, "files", "dep_check_rules"), "check");
+  loadDependencyRegexRuleSets(path.join(context.extensionPath, "files", "dep_manifest_main_rules"), "manifest.main");
+  loadDependencyRegexRuleSets(path.join(context.extensionPath, "files", "dep_manifest_scripts_rules"), "manifest.scripts");
+
+  return Global.dependencyRegexRuleSets;
+}
+
 module.exports = {
   disableRuleSet,
   enableRuleSet,
   initScanner,
+  initDependencyScanner,
   regexRuleSetsScan,
   semgrepRuleSetsScan,
 };

@@ -34,6 +34,8 @@ var enabledRegexRuleSets = [];
 var enabledSemgrepRuleSets = [];
 var semgrepServer = undefined;
 
+var dependencyRegexRuleSets = Map();
+
 var vulnDiagnostics = vscode.languages.createDiagnosticCollection("vulns");
 
 module.exports = {
