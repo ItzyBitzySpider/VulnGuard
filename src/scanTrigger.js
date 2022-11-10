@@ -24,7 +24,8 @@ async function scan(fsPath, enabledFeatures) {
       })
     );
   }
-  if (enabledFeatures) Global.vulns[fsPath].push(...tmpVulnList);
+  if (enabledFeatures && Global.vulns.has(fsPath))
+    Global.vulns.set(fsPath, [...tmpVulnList, ...Global.vulns.get(fsPath)]);
   else Global.vulns.set(fsPath, tmpVulnList);
 }
 

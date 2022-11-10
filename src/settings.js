@@ -42,7 +42,10 @@ function getFeatures(context) {
  */
 function setFeature(context, feature, enabled) {
   features[feature] = enabled;
-  require("./scanTrigger").scanWorkspace(context);
+
+  if (enabled) require("./scanTrigger").scanWorkspace(context, feature);
+  else require("./utils").deleteVulnsWithFeature(feature);
+
   const featuresPath = getFeaturesPath(context);
   fs.writeFile(featuresPath, JSON.stringify(features), function (err) {
     if (err) return console.log(err);

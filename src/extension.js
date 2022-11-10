@@ -14,6 +14,8 @@ const {
   semgrepRuleSetsScan,
 } = require("./scanner");
 
+//TODO file opened state independent diagnostics
+
 /**
  * @param {vscode.ExtensionContext} context
  */
