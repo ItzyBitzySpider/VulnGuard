@@ -117,7 +117,7 @@ function createWebview(context) {
                       );
                       return;
                     }
-                    addUserRuleset(context, message.id, value);
+                    addUserRuleset(context, message.id, value[0].path);
                     updateWebview(context);
                     vscode.window.showInformationMessage("Ruleset added");
                   },
