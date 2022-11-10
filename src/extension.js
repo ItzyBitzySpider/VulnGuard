@@ -14,10 +14,6 @@ const {
   semgrepRuleSetsScan,
 } = require("./scanner");
 
-//TODO ignore line token processing
-//TODO ignore error for line action
-//TODO ignore file action
-
 /**
  * @param {vscode.ExtensionContext} context
  */
@@ -31,7 +27,6 @@ async function activate(context) {
   initScanner(context);
   setFeatureContext(context);
 
-  let tmpVar = 0;
   const featureList = Global.getFeatureList();
   if (Global.semgrepServer) {
     featureList.push(

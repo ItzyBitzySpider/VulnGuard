@@ -1,5 +1,6 @@
 const vscode = require("vscode");
 const Global = require("./globals");
+const { toKebabCase } = require("./utils");
 const { getVulns } = require("./vuln");
 
 let activeEditor = undefined;
@@ -35,7 +36,8 @@ function updateDiagnostics(editors) {
     const storedVulns = getVulns();
     if (!storedVulns.has(editor.document.uri.fsPath)) return;
     const docVulns = storedVulns.get(editor.document.uri.fsPath);
-    const diagnostics = docVulns.map((vuln) => {
+    const diagnostics = [];
+    docVulns.forEach((vuln) => {
       let range = undefined;
       if (vuln.range) {
         range = new vscode.Range(
@@ -46,24 +48,38 @@ function updateDiagnostics(editors) {
         const line = editor.document.lineAt(vuln.line_no).range;
         range = new vscode.Range(line.start, line.end);
       }
-      return {
+      if (isRuleDisabled(editor, vuln)) return;
+      diagnostics.push({
         severity: SEVERITY[vuln.severity],
         range: range,
         message: vuln.message,
         source: "VulnGuard",
         code: {
-          //kebab-case vuln id
-          value: vuln.id
-            .replace(/([a-z])([A-Z])/g, "$1-$2")
-            .replace(/[\s_]+/g, "-")
-            .toLowerCase(),
+          value: toKebabCase(vuln.id),
           target: vscode.Uri.parse("https://google.com"),
         },
         tags: vuln.fix ? [vuln.fix] : undefined,
-      };
+      });
     });
     Global.vulnDiagnostics.set(editor.document.uri, diagnostics);
   });
+}
+
+/**
+ *
+ * @param {vscode.TextEditor} editor
+ */
+function isRuleDisabled(editor, vuln) {
+  let lineNum = vuln.range
+    ? editor.document.positionAt(vuln.range.start).line
+    : vuln.line_no;
+  if (!lineNum) return false;
+  const prevLine = editor.document.lineAt(lineNum - 1).text;
+  if (!prevLine.trimStart().startsWith("//")) return false;
+  return (
+    prevLine.includes("vulnguard-disable-*all*") ||
+    prevLine.includes(`vulnguard-disable-${toKebabCase(vuln.id)}`)
+  );
 }
 
 /**
