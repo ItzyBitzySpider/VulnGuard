@@ -5,14 +5,16 @@ const { createWebview, updateWebview } = require("./webview");
 const { Feature, setFeatureContext } = require("./feature");
 const Global = require("./globals");
 const { FixVulnCodeActionProvider } = require("./codeaction");
-const { setFeature, getFeatures } = require("./settings");
+const { setFeature, getFeatures, getUserRulesets } = require("./settings");
 const { scanWorkspace, scanFile } = require("./scanTrigger");
-const { renameVulns, deleteVulns } = require("./vuln");
+const { renameVulns, deleteVulns } = require("./utils");
 const {
   initScanner,
   regexRuleSetsScan,
   semgrepRuleSetsScan,
 } = require("./scanner");
+
+//TODO file opened state independent diagnostics
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -27,6 +29,7 @@ async function activate(context) {
   initScanner(context);
   setFeatureContext(context);
 
+  getUserRulesets(context);
   const featureList = Global.getFeatureList();
   if (Global.semgrepServer) {
     featureList.push(
@@ -60,16 +63,6 @@ async function activate(context) {
     new FixVulnCodeActionProvider()
   );
 
-  // scanFile(context, vscode.window.activeTextEditor.document.uri.fsPath).then(
-  //   () => {
-  //     diagnostics.initWindowDiagnostics(
-  //       Global.vulnDiagnostics,
-  //       vscode.window.visibleTextEditors,
-  //       vscode.window.activeTextEditor
-  //     );
-  //   }
-  // );
-  // TODO possibly scan entire workspace on start?
   scanWorkspace(context).then(() => {
     diagnostics.initWindowDiagnostics(
       vscode.window.visibleTextEditors,
@@ -137,6 +130,9 @@ async function activate(context) {
   context.subscriptions.push(
     vscode.commands.registerCommand("vulnguard.dashboard", () =>
       createWebview(context)
+    ),
+    vscode.commands.registerCommand("vulnguard.docs", (uri) =>
+      vscode.env.openExternal(uri)
     ),
     //onCreate
     watcher.onDidCreate((uri) => {

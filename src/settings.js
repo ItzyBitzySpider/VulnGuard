@@ -1,6 +1,7 @@
 const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
+const Global = require("./globals");
 
 function getGlobalPath(context) {
   const dir = context.globalStorageUri.fsPath;
@@ -42,6 +43,9 @@ function getFeatures(context) {
 function setFeature(context, feature, enabled) {
   features[feature] = enabled;
 
+  if (enabled) require("./scanTrigger").scanWorkspace(context, feature);
+  else require("./utils").deleteVulnsWithFeature(feature);
+
   const featuresPath = getFeaturesPath(context);
   fs.writeFile(featuresPath, JSON.stringify(features), function (err) {
     if (err) return console.log(err);
@@ -73,7 +77,8 @@ function addIgnoredRegex(context, regex) {
   ignoredRegex.push(regex);
   vscode.workspace
     .findFiles(regex, `${ignoredRegex.join(",")}}`)
-    .then((uris) => require("./vuln").deleteVulns(uris));
+    .then((uris) => Global.vulns.deleteVulns(uris));
+
   const ignoredPath = getIgnoredRegexPath(context);
   fs.writeFile(ignoredPath, ignoredRegex.join("\n"), function (err) {
     if (err) return console.log(err);
@@ -99,7 +104,7 @@ function getDisabledRulesPath(context) {
  * @param {vscode.ExtensionContext} context
  */
 function getDisabledRules(context) {
-  if (disabledRules) return disabledRules;
+  if (disabledRules) return [...disabledRules];
   if (!context) return undefined;
 
   const disabledRulesPath = getDisabledRulesPath(context);
@@ -126,6 +131,62 @@ function setDisabledRules(context, disabled) {
   );
 }
 
+let userRulesets;
+function getUserRulesetPath(context) {
+  const dir = getGlobalPath(context);
+  return path.join(dir, "rulesets.json");
+}
+/**
+ * @param {vscode.ExtensionContext} context
+ */
+function getUserRulesets(context) {
+  if (userRulesets) return userRulesets;
+  if (!context) return undefined;
+
+  const rulesetPath = getUserRulesetPath(context);
+  if (!fs.existsSync(rulesetPath))
+    fs.writeFileSync(rulesetPath, JSON.stringify({}), "utf8");
+  userRulesets = JSON.parse(fs.readFileSync(rulesetPath, "utf8"));
+  return userRulesets;
+}
+/**
+ * @param {vscode.ExtensionContext} context
+ * @param {string} feature
+ * @param {string} path
+ */
+function addUserRuleset(context, feature, path) {
+  const rulesetPath = getUserRulesetPath(context);
+  if (!userRulesets[feature]) userRulesets[feature] = [];
+  userRulesets[feature].push(path);
+  fs.writeFile(
+    rulesetPath,
+    JSON.stringify(userRulesets),
+    { encoding: "utf8" },
+    function (err) {
+      if (err) return console.log(err);
+      console.log(`Written to ${rulesetPath}`);
+    }
+  );
+}
+/**
+ * @param {vscode.ExtensionContext} context
+ * @param {string} feature
+ * @param {string} path
+ */
+function deleteUserRuleset(context, feature, path) {
+  const rulesetPath = getUserRulesetPath(context);
+  userRulesets[feature].splice(userRulesets[feature].indexOf(path), 1);
+  fs.writeFile(
+    rulesetPath,
+    JSON.stringify(userRulesets),
+    { encoding: "utf8" },
+    function (err) {
+      if (err) return console.log(err);
+      console.log(`Written to ${rulesetPath}`);
+    }
+  );
+}
+
 module.exports = {
   getFeatures,
   setFeature,
@@ -134,4 +195,7 @@ module.exports = {
   deleteIgnoredRegex,
   getDisabledRules,
   setDisabledRules,
+  getUserRulesets,
+  addUserRuleset,
+  deleteUserRuleset,
 };

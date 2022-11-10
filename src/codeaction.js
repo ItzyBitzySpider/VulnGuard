@@ -1,6 +1,5 @@
 const vscode = require("vscode");
 
-//TODO ignore file action
 class FixVulnCodeActionProvider {
   constructor() {
     this.providedCodeActionKinds = [vscode.CodeActionKind.QuickFix];
@@ -16,11 +15,6 @@ class FixVulnCodeActionProvider {
    */
 
   provideCodeActions(document, range, context, token) {
-    const outputActions = [];
-    context.diagnostics.forEach((diagnostic) =>
-      outputActions.push(...this.createCodeAction(document, diagnostic))
-    );
-
     const ignoreLineAction = new vscode.CodeAction(
       `Disable VulnGuard for this line`,
       vscode.CodeActionKind.QuickFix
@@ -59,7 +53,11 @@ class FixVulnCodeActionProvider {
         );
       }
     }
-    outputActions.push(ignoreLineAction);
+
+    const outputActions = [ignoreLineAction];
+    context.diagnostics.forEach((diagnostic) =>
+      outputActions.push(...this.createCodeAction(document, diagnostic))
+    );
 
     return outputActions;
   }
@@ -71,17 +69,20 @@ class FixVulnCodeActionProvider {
    * @returns {vscode.CodeAction}
    */
   createCodeAction(document, diagnostic) {
-    const fixAction = new vscode.CodeAction(
-      "Fix using VulnGuard suggestion",
-      vscode.CodeActionKind.QuickFix
-    );
+    const output = [];
+
     if (diagnostic.tags) {
+      const fixAction = new vscode.CodeAction(
+        "Fix using VulnGuard suggestion",
+        vscode.CodeActionKind.QuickFix
+      );
       fixAction.edit = new vscode.WorkspaceEdit();
       fixAction.edit.replace(
         document.uri,
         diagnostic.range,
         diagnostic.tags[0]
       );
+      output.push(fixAction);
     }
 
     const ignoreLineRuleAction = new vscode.CodeAction(
@@ -124,27 +125,20 @@ class FixVulnCodeActionProvider {
       }
     }
 
-    // const ignoreLineAction = new vscode.CodeAction(
-    //   `Disable all VulnGuard checks for this line`,
-    //   vscode.CodeActionKind.QuickFix
-    // );
-    // const firstLine = new vscode.Range(
-    //   diagnostic.range.start.line,
-    //   0,
-    //   diagnostic.range.start.line,
-    //   diagnostic.range.start.character
-    // );
-    // ignoreLineAction.edit = new vscode.WorkspaceEdit();
-    // ignoreLineAction.edit.replace(
-    //   document.uri,
-    //   firstLine,
-    //   `// vulnguard-disable-${diagnostic.code.value} \n` +
-    //     document.getText(firstLine)
-    // );
+    if (diagnostic.code.target) {
+      const readDocsAction = new vscode.CodeAction(
+        `Learn more...`,
+        vscode.CodeActionKind.QuickFix
+      );
+      readDocsAction.command = {
+        title: "docs",
+        command: "vulnguard.docs",
+        arguments: [diagnostic.code.target],
+      };
+      output.push(readDocsAction);
+    }
 
-    return diagnostic.tags
-      ? [fixAction, ignoreLineRuleAction]
-      : [ignoreLineRuleAction];
+    return output;
   }
 }
 
