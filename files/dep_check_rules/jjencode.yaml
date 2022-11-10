@@ -1,0 +1,7 @@
+# Taken from https://github.com/spaceraccoon/npm-scan/
+rules:
+  - id: jjencode-obfuscation
+    message: 'jjencode code obfuscation'
+    severity: WARNING
+    reference: 'https://www.symantec.com/connect/blogs/short-sharp-spam-attacks-aiming-spread-dyre-financial-malware/'
+    regex: '\$=~\[\];\$=\{[_]{3}:[+]{2}\$,[$]{4}:\(!\[\]\+["]{2}\)'

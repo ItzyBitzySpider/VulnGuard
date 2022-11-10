@@ -12,7 +12,3 @@ rules:
       - regex_or:
         - regex: '\bdb.many\b'
         - regex: '\bdb.one\b'
-
-
-       
-

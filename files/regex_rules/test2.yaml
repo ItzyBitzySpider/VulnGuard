@@ -18,6 +18,3 @@ rules:
         - regex: '\bUPDATE\b'
       - regex_and: '\buser_name\b'
       - regex_not: '\bproduct_name\b'
-
-       
-

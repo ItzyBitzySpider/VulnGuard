@@ -1,0 +1,12 @@
+# Taken from https://github.com/spaceraccoon/npm-scan/
+rules:
+  - id: check-csp
+    message: 'Attempting to retrieve site\'s Content Security Policy'
+    severity: WARNING
+    reference: 'https://hackernoon.com/im-harvesting-credit-card-numbers-and-passwords-from-your-site-here-s-how-9a8cb347c5b5'
+    regex: 'get\('Content-Security-Policy'\)'
+  - id: csp-prefetch-bypass
+    message: 'Bypass Content Security Policy with DNS prefetch'
+    severity: WARNING
+    reference: 'https://blog.compass-security.com/2016/10/bypassing-content-security-policy-with-dns-prefetching/'
+    regex: 'link.*[ .]rel.*=.*prefetch'
