@@ -165,41 +165,52 @@ function applyRegexCheck(node, parent_type, text) {
 //Dependency Check
 function npmRegistryCheck(packageName, filePath) {
   return new Promise((resolve, reject) => {
-    const data = fs.readFileSync(filePath, 'utf8')
-    const packageManifest = JSON.parse(data)
-    const currentVersion = packageManifest.version
-    let result = null
+    const data = fs.readFileSync(filePath, 'utf8');
+    const packageManifest = JSON.parse(data);
+    const currentVersion = packageManifest.version;
+    let result = null;
 
     https.get(`https://registry.npmjs.org/${packageName}`, (response) => {
       if (response.status >= 400) {
-        reject(new Error(`Request to ${response.url} failed with HTTP ${response.status}`))
+        reject(new Error(`Request to ${response.url} failed with HTTP ${response.status}`));
       }
 
-      var body = ''
+      var body = '';
 
       response.on('data', (chunk) => {
-        body += chunk.toString()
-      })
+        body += chunk.toString();
+      });
 
       response.on('end', () => {
-        const packageInfo = JSON.parse(body)
-        const versions = Object.keys(packageInfo.time)
-        const previousVersion = versions[versions.indexOf(currentVersion) - 1]
-        const currentVersionDate = new Date(packageInfo.time[currentVersion])
-        const previousVersionDate = new Date(packageInfo.time[previousVersion])
+        const packageInfo = JSON.parse(body);
+        const versions = Object.keys(packageInfo.time);
+        const previousVersion = versions[versions.indexOf(currentVersion) - 1];
+        const currentVersionDate = new Date(packageInfo.time[currentVersion]);
+        const previousVersionDate = new Date(packageInfo.time[previousVersion]);
 
+        //Taken from https://github.com/spaceraccoon/npm-scan/
         if (currentVersionDate - previousVersionDate > 63072000000) {
           result = {
             id: 'lastUpdated',
             message: 'Unusually long time between previous and current version',
             reference: 'https://snyk.io/blog/malicious-code-found-in-npm-package-event-stream/',
-          }
+            severity: "WARNING",
+          };
         }
 
-        resolve(result)
-      })
-    })
-  })
+        //TODO add reference
+        if (new Date() - currentVersionDate > 15768000000) {
+          result += {
+            id: 'unmaintained-package',
+            message: 'Unmaintained package - Consider switching to a maintained package',
+            severity: "WARNING",
+          };
+        }
+        
+        resolve(result);
+      });
+    });
+  });
 }
 
 async function analyzePackage(dir) {
@@ -221,6 +232,7 @@ async function analyzePackage(dir) {
       hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets["manifest.scripts"], JSON.stringify(dat["scripts"])));
     }
 
+    //Taken from https://github.com/mbalabash/sdc-check
     let hasNoSourceCodeRefInHomepage = typeof dat.homepage !== 'string' || (!dat.homepage.includes('github') && !dat.homepage.includes('gitlab'));
     let hasNoSourceCodeRefInRepository = typeof dat.repository !== 'object' ||  typeof dat.repository.url !== 'string' || (!dat.repository.url.includes('github') && !dat.repository.url.includes('gitlab'));
     if (hasNoSourceCodeRefInHomepage && hasNoSourceCodeRefInRepository) {
