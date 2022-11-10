@@ -132,6 +132,19 @@ function createWebview(context) {
               message.value === "true"
                 ? enableRuleSet(context, message.rule)
                 : disableRuleSet(context, message.rule);
+              vscode.window
+                .showInformationMessage(
+                  `Ruleset ${
+                    message.value === "true" ? "enabled" : "disabled"
+                  }. Restart Visual Studio Code to take effect`,
+                  "Restart"
+                )
+                .then((value) => {
+                  if (value)
+                    vscode.commands.executeCommand(
+                      "workbench.action.reloadWindow"
+                    );
+                });
               updateWebview(context);
             }
           }
