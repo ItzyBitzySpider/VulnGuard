@@ -5,7 +5,7 @@ const { createWebview, updateWebview } = require("./webview");
 const { Feature, setFeatureContext } = require("./feature");
 const Global = require("./globals");
 const { FixVulnCodeActionProvider } = require("./codeaction");
-const { setFeature, getFeatures } = require("./settings");
+const { setFeature, getFeatures, getUserRulesets } = require("./settings");
 const { scanWorkspace, scanFile } = require("./scanTrigger");
 const { renameVulns, deleteVulns } = require("./vuln");
 const {
@@ -27,6 +27,7 @@ async function activate(context) {
   initScanner(context);
   setFeatureContext(context);
 
+  getUserRulesets(context);
   const featureList = Global.getFeatureList();
   if (Global.semgrepServer) {
     featureList.push(

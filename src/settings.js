@@ -126,6 +126,62 @@ function setDisabledRules(context, disabled) {
   );
 }
 
+let userRulesets;
+function getUserRulesetPath(context) {
+  const dir = getGlobalPath(context);
+  return path.join(dir, "rulesets.json");
+}
+/**
+ * @param {vscode.ExtensionContext} context
+ */
+function getUserRulesets(context) {
+  if (userRulesets) return userRulesets;
+  if (!context) return undefined;
+
+  const rulesetPath = getUserRulesetPath(context);
+  if (!fs.existsSync(rulesetPath))
+    fs.writeFileSync(rulesetPath, JSON.stringify({}), "utf8");
+  userRulesets = JSON.parse(fs.readFileSync(rulesetPath, "utf8"));
+  return userRulesets;
+}
+/**
+ * @param {vscode.ExtensionContext} context
+ * @param {string} feature
+ * @param {string} path
+ */
+function addUserRuleset(context, feature, path) {
+  const rulesetPath = getUserRulesetPath(context);
+  if (!userRulesets[feature]) userRulesets[feature] = [];
+  userRulesets[feature].push(path);
+  fs.writeFile(
+    rulesetPath,
+    JSON.stringify(userRulesets),
+    { encoding: "utf8" },
+    function (err) {
+      if (err) return console.log(err);
+      console.log(`Written to ${rulesetPath}`);
+    }
+  );
+}
+/**
+ * @param {vscode.ExtensionContext} context
+ * @param {string} feature
+ * @param {string} path
+ */
+function deleteUserRuleset(context, feature, path) {
+  const rulesetPath = getUserRulesetPath(context);
+  userRulesets[feature].splice(userRulesets[feature].indexOf(path), 1);
+  fs.writeFile(
+    rulesetPath,
+    JSON.stringify(userRulesets),
+    { encoding: "utf8" },
+    function (err) {
+      if (err) return console.log(err);
+      console.log(`Written to ${rulesetPath}`);
+    }
+  );
+}
+
 module.exports = {
   getFeatures,
   setFeature,
@@ -134,4 +190,7 @@ module.exports = {
   deleteIgnoredRegex,
   getDisabledRules,
   setDisabledRules,
+  getUserRulesets,
+  addUserRuleset,
+  deleteUserRuleset,
 };

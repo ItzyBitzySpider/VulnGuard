@@ -6,6 +6,7 @@ const {
   getIgnoredRegex,
   addIgnoredRegex,
   deleteIgnoredRegex,
+  addUserRuleset,
 } = require("./settings");
 const Global = require("./globals");
 const { getVulns } = require("./vuln");
@@ -100,11 +101,40 @@ function createWebview(context) {
                 );
             }
           } else {
-            //Enabling/disabling rules
-            message.value === "true"
-              ? enableRuleSet(context, message.rule)
-              : disableRuleSet(context, message.rule);
-            updateWebview(context);
+            if (message.rule === "add-ruleset") {
+              vscode.window
+                .showOpenDialog({
+                  canSelectFiles: true,
+                  openLabel: "Select File",
+                  title: "Add Ruleset",
+                  filters: { "YAML Config": ["yml", "yaml"] },
+                })
+                .then(
+                  (value) => {
+                    if (!value) {
+                      vscode.window.showWarningMessage(
+                        "Ruleset not added. No file selected."
+                      );
+                      return;
+                    }
+                    addUserRuleset(context, message.id, value);
+                    updateWebview(context);
+                    vscode.window.showInformationMessage("Ruleset added");
+                  },
+                  (reason) => {
+                    vscode.window.showWarningMessage(
+                      "Ruleset not added.",
+                      reason
+                    );
+                  }
+                );
+            } else {
+              //Enabling/disabling rules
+              message.value === "true"
+                ? enableRuleSet(context, message.rule)
+                : disableRuleSet(context, message.rule);
+              updateWebview(context);
+            }
           }
           return;
       }
@@ -146,6 +176,9 @@ function getFeatureEntries(feature) {
       <p style="flex: 1">${rulesetData.enabled} of ${rulesetData.total} ${
     feature.title
   } Rule(s) Enabled</p>
+    <button id="${feature.id}__button__add-ruleset" type="button">
+      ${Icons.add}
+    </button>
     </div>
     ${entries}
   </div>
