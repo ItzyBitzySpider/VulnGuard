@@ -56,7 +56,7 @@ function updateDiagnostics(editors) {
         source: "VulnGuard",
         code: {
           value: toKebabCase(vuln.id),
-          target: vscode.Uri.parse("https://google.com"),
+          target: vuln.reference ? vscode.Uri.parse(vuln.reference) : undefined,
         },
         tags: vuln.fix ? [vuln.fix] : undefined,
       });
