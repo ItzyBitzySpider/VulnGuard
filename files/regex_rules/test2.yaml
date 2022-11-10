@@ -1,0 +1,21 @@
+rules:
+  - id: test-regex-and
+    message: 'regex AND expression'
+    severity: WARNING
+    regex:
+      - regex: '\bSELECT\b'
+      - regex_and: '\buser_name\b'
+  - id: test-regex-nested
+    message: 'regex nested expression. PURCHASES && (SELECT || UPDATE || INSERT) && user_name && !product_name'
+    severity: WARNING
+    regex:
+      - regex: '\bpurchases\b'
+      - regex_or:
+        - regex: '\bSELECT\b'
+        - regex: '\bINSERT\b'
+        - regex: '\bUPDATE\b'
+      - regex_and: '\buser_name\b'
+      - regex_not: '\bproduct_name\b'
+
+       
+
