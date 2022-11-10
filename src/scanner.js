@@ -151,16 +151,7 @@ function applyRegexCheck(node, parent_type, text) {
   return res;
 }
 
-//the function below may be deprecated soon
-function scan(path) {
-  Promise.all([
-    semgrepRuleSetsScan(Global.enabledSemgrepRuleSets, path),
-    regexRuleSetsScan(Global.enabledRegexRuleSets, path),
-  ]).then((values) => {
-    console.log(values);
-  });
-}
-
+//Misc Functions
 function getFilesRecursively(top_dir) {
   if (!fs.existsSync(top_dir)) {
     console.warn("Directory not found: " + top_dir);
@@ -503,16 +494,6 @@ function enableRuleSet(context, path) {
   disabled = disabled.filter((item) => item !== path);
   setDisabledRules(context, disabled); //Update disabled.json
 }
-
-//test function to be deleted
-//wrap in async since top level runs synchronously
-// (async () => {
-//   initScanner();
-
-//   console.time("test");
-//   scan("sample.js");
-//   console.timeEnd("test");
-// })();
 
 module.exports = {
   disableRuleSet,
