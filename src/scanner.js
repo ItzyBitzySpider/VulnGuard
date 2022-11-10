@@ -77,7 +77,6 @@ async function regexRuleScan(rule, path) {
     console: false,
   });
   for await (const line of rd) {
-    line_no += 1;
     if (rule.regex instanceof RegExp) {
       //Can provide start and end indices since this is a simple regex rule (not a regex tree)
       let match;
@@ -104,6 +103,7 @@ async function regexRuleScan(rule, path) {
         });
       }
     }
+    line_no += 1;
   }
   return hits;
 }
