@@ -81,4 +81,5 @@ function handleChange(fsPath) {
 module.exports = {
   updateDiagnostics,
   handleChange,
+  SEVERITY,
 };
