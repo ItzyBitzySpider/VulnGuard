@@ -298,7 +298,7 @@ async function analyzePackage(context) {
             const moduleName = uri.fsPath.match(
               new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
             )[1];
-            const moduleHash = moduleName + "_" + yarnLock[moduleName];
+            const moduleHash = moduleName + "_" + yarnLock[moduleName].version;
             if (cached[moduleHash]) { //Skip since cached
               cacheHits[moduleHash] = true;
               return;
@@ -327,7 +327,7 @@ async function analyzePackage(context) {
             const moduleName = uri.fsPath.match(
               new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
             )[1];
-            const moduleHash = moduleName + "_" + yarnLock[moduleName];
+            const moduleHash = moduleName + "_" + yarnLock[moduleName].version;
             if (cached[moduleHash]) { //Skip since cached
               cacheHits[moduleHash] = true;
               return;
@@ -360,7 +360,7 @@ async function analyzePackage(context) {
               const moduleName = uri.fsPath.match(
                 new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
               )[1];
-              const moduleHash = moduleName + "_" + yarnLock[moduleName];
+              const moduleHash = moduleName + "_" + yarnLock[moduleName].version;
               if (cached[moduleHash]) { //Skip since cached
                 cacheHits[moduleHash] = true;
                 return;
