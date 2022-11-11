@@ -66,10 +66,7 @@ async function activate(context) {
   );
 
   scanWorkspace(context).then(() => {
-    diagnostics.initWindowDiagnostics(
-      vscode.window.visibleTextEditors,
-      vscode.window.activeTextEditor
-    );
+    diagnostics.updateDiagnostics();
     createWebview(context);
   });
 
@@ -99,16 +96,16 @@ async function activate(context) {
     context.subscriptions
   );
   // Change tab
-  vscode.window.onDidChangeActiveTextEditor(
-    diagnostics.handleChangeActiveEditor,
-    null,
-    context.subscriptions
-  );
-  vscode.workspace.onDidCloseTextDocument(
-    diagnostics.handleDocumentClose,
-    null,
-    context.subscriptions
-  );
+  // vscode.window.onDidChangeActiveTextEditor(
+  //   diagnostics.handleChangeActiveEditor,
+  //   null,
+  //   context.subscriptions
+  // );
+  // vscode.workspace.onDidCloseTextDocument(
+  //   diagnostics.handleDocumentClose,
+  //   null,
+  //   context.subscriptions
+  // );
   vscode.workspace.onDidRenameFiles(
     (event) => {
       event.files.forEach((f) => {
@@ -122,9 +119,7 @@ async function activate(context) {
   );
   //onDelete
   vscode.workspace.onDidDeleteFiles(
-    (event) => {
-      event.files.forEach((uri) => deleteVulns(uri));
-    },
+    (event) => event.files.forEach((uri) => deleteVulns(uri)),
     null,
     context.subscriptions
   );

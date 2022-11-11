@@ -2,77 +2,65 @@ const vscode = require("vscode");
 const Global = require("./globals");
 const { toKebabCase } = require("./utils");
 
-let activeEditor = undefined;
-
 const SEVERITY = {
   ERROR: vscode.DiagnosticSeverity.Error,
   WARNING: vscode.DiagnosticSeverity.Warning,
   INFO: vscode.DiagnosticSeverity.Information,
 };
 
-function clearDiagnostics() {
-  if (activeEditor) Global.vulnDiagnostics.clear();
-}
-
 /**
  *
- * @param {vscode.TextEditor[]} editors
- * @param {vscode.TextEditor} active
+ * @param {string[] | undefined} files
  */
-function initWindowDiagnostics(editors, active) {
-  activeEditor = active;
-  updateDiagnostics(editors);
-}
-
-/**
- *
- * @param {vscode.TextEditor[]} editors
- * @returns
- */
-function updateDiagnostics(editors) {
-  if (!editors) return;
-  editors.forEach((editor) => {
-    if (!Global.vulns.has(editor.document.uri.fsPath)) return;
-    const docVulns = Global.vulns.get(editor.document.uri.fsPath);
-    const diagnostics = [];
-    docVulns.forEach((vuln) => {
-      let range = undefined;
-      if (vuln.range) {
-        range = new vscode.Range(
-          editor.document.positionAt(vuln.range.start),
-          editor.document.positionAt(vuln.range.end)
-        );
-      } else {
-        const line = editor.document.lineAt(vuln.line_no).range;
-        range = new vscode.Range(line.start, line.end);
-      }
-      if (isRuleDisabled(editor, vuln)) return;
-      diagnostics.push({
-        severity: SEVERITY[vuln.severity],
-        range: range,
-        message: vuln.message,
-        source: "VulnGuard",
-        code: {
-          value: toKebabCase(vuln.id),
-          target: vuln.reference ? vscode.Uri.parse(vuln.reference) : undefined,
-        },
-        tags: vuln.fix ? [vuln.fix] : undefined,
+function updateDiagnostics(files) {
+  function update(docVulns, filePath) {
+    vscode.workspace.openTextDocument(filePath).then((document) => {
+      const diagnostics = [];
+      docVulns.forEach((vuln) => {
+        let range = undefined;
+        if (vuln.range) {
+          range = new vscode.Range(
+            document.positionAt(vuln.range.start),
+            document.positionAt(vuln.range.end)
+          );
+        } else {
+          const line = document.lineAt(vuln.line_no).range;
+          range = new vscode.Range(line.start, line.end);
+        }
+        if (isRuleDisabled(document, vuln)) return;
+        diagnostics.push({
+          severity: SEVERITY[vuln.severity],
+          range: range,
+          message: vuln.message,
+          source: "VulnGuard",
+          code: {
+            value: toKebabCase(vuln.id),
+            target: vuln.reference
+              ? vscode.Uri.parse(vuln.reference)
+              : undefined,
+          },
+          tags: vuln.fix ? [vuln.fix] : undefined,
+        });
       });
+      Global.vulnDiagnostics.set(document.uri, diagnostics);
     });
-    Global.vulnDiagnostics.set(editor.document.uri, diagnostics);
-  });
+  }
+
+  if (files)
+    files.forEach((filePath) => update(Global.vulns.get(filePath), filePath));
+  else Global.vulns.forEach(update);
 }
 
 /**
  *
- * @param {vscode.TextEditor} editor
+ * @param {vscode.TextDocument} document
  */
-function isRuleDisabled(editor, vuln) {
+function isRuleDisabled(document, vuln) {
   let lineNum = vuln.range
-    ? editor.document.positionAt(vuln.range.start).line
+    ? document.positionAt(vuln.range.start).line
     : vuln.line_no;
   if (!lineNum) return false;
-  const prevLine = editor.document.lineAt(lineNum - 1).text;
+  const prevLine = document.lineAt(lineNum - 1).text;
   if (!prevLine.trimStart().startsWith("//")) return false;
   return (
     prevLine.includes("vulnguard-disable-*all*") ||
@@ -81,33 +69,13 @@ function isRuleDisabled(editor, vuln) {
 }
 
 /**
- * @param {vscode.TextEditor} editor
- */
-function handleChangeActiveEditor(editor) {
-  activeEditor = editor;
-  if (editor) updateDiagnostics([editor]);
-  else clearDiagnostics();
-}
-
-/**
  * @param {vscode.TextDocument} document
  */
 function handleActiveEditorTextChange(document) {
-  if (activeEditor && document === activeEditor.document) {
-    updateDiagnostics([activeEditor]);
-  } else clearDiagnostics();
-}
-
-/**
- * @param {vscode.TextDocument} document
- */
-function handleDocumentClose(document) {
-  Global.vulnDiagnostics.delete(document.uri);
+  updateDiagnostics(document.uri.fsPath);
 }
 
 module.exports = {
-  initWindowDiagnostics,
+  updateDiagnostics,
   handleActiveEditorTextChange,
-  handleChangeActiveEditor,
-  handleDocumentClose,
 };
