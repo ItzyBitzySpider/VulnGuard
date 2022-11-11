@@ -13,15 +13,13 @@ const yaml = require("yaml");
 const execFileAsync = promisify(execFile);
 const Global = require("./globals");
 const vscode = require("vscode");
-const crypto = require("crypto");
 const https = require("https");
-const os = require("os");
 const PromisePool = require("es6-promise-pool");
 
 //SEMGREP FUNCTION
 //TODO: Add interrupt functionality
 async function semgrepRuleSetsScan(configs, path, exclude = null) {
-  var hits = [];
+  let hits = [];
   //append --exclude-rule to semgrep command for each exclude rule
   if (exclude)
     exclude = exclude.map((rule) => {
@@ -59,7 +57,7 @@ async function semgrepRuleSetsScan(configs, path, exclude = null) {
 
 //REGEX FUNCTION
 async function regexRuleSetsScan(ruleSets, path, text = false) {
-  var hits = [];
+  let hits = [];
   const promises = ruleSets.map((ruleSet) => {
     return regexRuleSetScan(ruleSet, path, text);
   });
@@ -69,7 +67,7 @@ async function regexRuleSetsScan(ruleSets, path, text = false) {
 }
 
 async function regexRuleSetScan(ruleSet, path, text = false) {
-  var hits = [];
+  let hits = [];
   //array of promises to run regex for each rule
   const promises = ruleSet.ruleSet.map((rule) => {
     return regexRuleScan(rule, path, text);
@@ -80,8 +78,7 @@ async function regexRuleSetScan(ruleSet, path, text = false) {
 }
 
 async function regexRuleScan(rule, path, text = false) {
-  var hits = [];
-  var line_no = 0;
+  let hits = [];
 
   let stream;
   if (text) {
@@ -91,12 +88,14 @@ async function regexRuleScan(rule, path, text = false) {
   } else {
     stream = fs.createReadStream(path);
   }
-  var rd = readline.createInterface({
+  let rd = readline.createInterface({
     input: stream,
     console: false,
   });
 
-  for await (const line of rd) {
+  async function processLine(line, line_no) {
+    const trimline = line.trim();
+    if (trimline.length === 0 || trimline.startsWith("//")) return;
     if (rule.regex instanceof RegExp) {
       //Can provide start and end indices since this is a simple regex rule (not a regex tree)
       let match;
@@ -125,8 +124,15 @@ async function regexRuleScan(rule, path, text = false) {
         });
       }
     }
-    line_no += 1;
   }
+
+  let lineNum = 0;
+  const promises = [];
+  for await (const line of rd) {
+    promises.push(processLine(line, lineNum));
+    lineNum++;
+  }
+  await Promise.all(promises);
   return hits;
 }
 
@@ -231,8 +237,8 @@ function npmRegistryCheck(packageName, filePath) {
   });
 }
 
-async function analyzePackage(dir) {
-  var hits = {};
+async function analyzePackage() {
+  let hits = {};
 
   function extListToSearch(input) {
     return (
@@ -249,12 +255,13 @@ async function analyzePackage(dir) {
   const promiseArr = [];
   const promisePool = new PromisePool(() => {
     if (!promiseArr.length) return null;
+    if (promiseArr.length % 500 === 0)
+      console.log(promiseArr.length + " packages left to scan");
     const f = promiseArr.splice(-1)[0]();
-    if (promiseArr.length % 500 === 0) console.log(promiseArr.length);
     return f;
   }, MAX_THREAD);
 
-  const EXCLUDE_DIRS = "{node_modules/**/*.d.ts}";
+  const EXCLUDE_DIRS = "{node_modules/**/*.d.ts,node_modules/.bin/**}";
 
   const checkA = vscode.workspace
     .findFiles(
@@ -282,9 +289,9 @@ async function analyzePackage(dir) {
               Global.dependencyRegexRuleSets["check"],
               uri.fsPath
             );
-            hits[moduleName].push(res);
+            if (res.length) hits[moduleName].push(...res);
             const duration = performance.now() - start;
-            if (duration > 60000)
+            if (duration > 30000)
               console.warn(`<A> scan for ${uri.fsPath} took ${duration}ms`);
           };
         })
@@ -309,7 +316,7 @@ async function analyzePackage(dir) {
               id: "has-os-scripts",
             });
             const duration = performance.now() - start;
-            if (duration > 60000)
+            if (duration > 30000)
               console.warn(`<B> scan for ${uri.fsPath} took ${duration}ms`);
           };
         })
@@ -377,10 +384,12 @@ async function analyzePackage(dir) {
               }
 
               const res = await Promise.all(datChecks);
-              hits[moduleName].push(...res);
+              res.forEach((r) => {
+                if (r.length) hits[moduleName].push(...r);
+              });
 
               const duration = performance.now() - start;
-              if (duration > 60000)
+              if (duration > 30000)
                 console.warn(`<C> scan for ${uri.fsPath} took ${duration}ms`);
             } catch (e) {
               console.warn("Invalid JSON found in " + uri.fsPath);
@@ -402,11 +411,9 @@ async function analyzePackage(dir) {
     });
 
   await Promise.all([checkA, checkB, checkC]);
-  console.log("Starting Pool", promiseArr);
-  console.time("pp");
+  console.time("Dependency Scan Time");
   await promisePool.start().then(() => {
-    console.log("Done");
-    console.timeEnd("pp");
+    console.timeEnd("Dependency Scan Time");
   });
 
   // var modulePaths = getTopLevelDirectories(path.join(dir, "node_modules"));
@@ -417,8 +424,8 @@ async function analyzePackage(dir) {
 
   //   const moduleName = path.basename(modulePath);
 
-  //   //Skip .bin and @ folder
-  //   if (moduleName === ".bin" || moduleName.startsWith("@")) continue;
+  //   //Skip .bin
+  //   if (moduleName === ".bin") continue;
 
   //   //try-catch package manifest checks (package manifest may not exist in all packages)
   //   try {
@@ -434,20 +441,20 @@ async function analyzePackage(dir) {
 }
 
 //Misc Functions
-function writeToTempFile(text) {
-  const tmpPath = path.join(
-    os.tmpdir(),
-    crypto.randomBytes(16).toString("hex")
-  );
-  fs.writeFileSync(tmpPath, text, "utf8");
-  return tmpPath;
-}
+// function writeToTempFile(text) {
+//   const tmpPath = path.join(
+//     os.tmpdir(),
+//     crypto.randomBytes(16).toString("hex")
+//   );
+//   fs.writeFileSync(tmpPath, text, "utf8");
+//   return tmpPath;
+// }
 
-function getTopLevelDirectories(dir) {
-  return fs.readdirSync(dir).filter(function (file) {
-    return fs.statSync(path.join(dir, file)).isDirectory();
-  });
-}
+// function getTopLevelDirectories(dir) {
+//   return fs.readdirSync(dir).filter(function (file) {
+//     return fs.statSync(path.join(dir, file)).isDirectory();
+//   });
+// }
 
 function getFilesRecursively(top_dir) {
   if (!fs.existsSync(top_dir)) {
