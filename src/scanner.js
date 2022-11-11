@@ -67,9 +67,7 @@ async function regexRuleSetsScan(ruleSets, path) {
     return regexRuleSetScan(ruleSet, path);
   });
   const results = await Promise.all(promises);
-  for (const result of results) {
-    hits = hits.concat(result);
-  }
+  for (const result of results) hits.push(...result);
   return hits;
 }
 
@@ -80,9 +78,7 @@ async function regexRuleSetScan(ruleSet, path) {
     return regexRuleScan(rule, path);
   });
   const results = await Promise.all(promises);
-  for (const result of results) {
-    hits = hits.concat(result);
-  }
+  for (const result of results) hits.push(...result);
   return hits;
 }
 
@@ -229,11 +225,73 @@ function npmRegistryCheck(packageName, filePath) {
 }
 
 async function analyzePackage(dir) {
-  var finalHits = [];
+  var hits = {};
+
+  function extListToSearch(input) {
+    return (
+      "{" +
+      input
+        .map((ext) => path.join("node_modules", "**", "*" + ext))
+        .join(",")
+        .replaceAll("\\", "/") +
+      "}"
+    );
+  }
+
+  vscode.workspace
+    .findFiles(
+      extListToSearch([
+        ".coffee",
+        ".js",
+        ".jsx",
+        ".ts",
+        ".tsx",
+        ".mjs",
+        ".json",
+      ]),
+      "**/*.d.ts"
+    )
+    .then(async (fileset) => {
+      for (const uri of fileset) {
+        const moduleName = uri.fsPath.match(
+          new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
+        )[1];
+        if (!hits[moduleName]) hits[moduleName] = [];
+        hits[moduleName].push(
+          await regexRuleSetsScan(
+            Global.dependencyRegexRuleSets["check"],
+            uri.fsPath
+          )
+        );
+      }
+      console.log("DONE---DONE----------------------");
+    });
+
+  vscode.workspace
+    .findFiles(extListToSearch([".sh", ".bash", ".bat", ".cmd"]))
+    .then((fileset) => {
+      for (const uri of fileset) {
+        const moduleName = uri.fsPath.match(
+          new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
+        )[1];
+        if (!hits[moduleName]) hits[moduleName] = [];
+        hits[moduleName].push({
+          //TODO add reference
+          severity: "WARNING",
+          message: "Package includes OS scripts - you should verify them",
+          id: "has-os-scripts",
+        });
+      }
+      console.log("DONE-------------------------");
+    });
 
   var modulePaths = getTopLevelDirectories(path.join(dir, "node_modules"));
   for (const modulePath of modulePaths) {
-    var hits = [];
+    console.log("Module", modulePath);
+    if (!hits[modulePath]) hits[modulePath] = [];
+    console.log("TIME START");
+    console.time(modulePath);
+
     const moduleName = path.basename(modulePath);
 
     //Skip .bin and @ folder
@@ -249,21 +307,23 @@ async function analyzePackage(dir) {
 
       //TODO: Remove line numbers, and range since they are completely wrong
       if (dat["main"]) {
-        hits = hits.concat(
-          await regexRuleSetsScanText(
+        hits[modulePath].push(
+          ...(await regexRuleSetsScanText(
             Global.dependencyRegexRuleSets["manifest.main"],
             JSON.stringify(dat["main"])
-          )
+          ))
         );
       }
       if (dat["scripts"]) {
-        hits = hits.concat(
-          await regexRuleSetsScanText(
+        hits[modulePath].push(
+          ...(await regexRuleSetsScanText(
             Global.dependencyRegexRuleSets["manifest.scripts"],
             JSON.stringify(dat["scripts"])
-          )
+          ))
         );
       }
+
+      console.timeLog(modulePath, "A");
 
       //Taken from https://github.com/mbalabash/sdc-check
       let hasNoSourceCodeRefInHomepage =
@@ -275,7 +335,7 @@ async function analyzePackage(dir) {
         (!dat.repository.url.includes("github") &&
           !dat.repository.url.includes("gitlab"));
       if (hasNoSourceCodeRefInHomepage && hasNoSourceCodeRefInRepository) {
-        hits.push({
+        hits[modulePath].push({
           //TODO add reference
           severity: "WARNING",
           message: "No source code repository found for package",
@@ -283,11 +343,13 @@ async function analyzePackage(dir) {
         });
       }
 
+      console.timeLog(modulePath, "B");
+
       await npmRegistryCheck(
         moduleName,
         path.join(dir, "node_modules", modulePath, "package.json")
       ).then(
-        (resolve) => hits.concat(resolve),
+        (resolve) => hits[modulePath].push(...resolve),
         (reject) =>
           console.warn(
             "Unable to perform npm registry check on module",
@@ -296,35 +358,16 @@ async function analyzePackage(dir) {
             reject
           )
       );
+      console.timeEnd(modulePath);
     } catch (e) {
       console.warn(
         "No package.json found/Something went wrong. Skipping package manifest checks."
       );
       console.warn(e.message);
     }
-
-    var files = getFilesRecursively(path.join(dir, "node_modules", modulePath));
-    for (const file of files) {
-      const ext = path.extname(file);
-      if (
-        [".coffee", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".json"].includes(ext)
-      ) {
-        hits = hits.concat(
-          await regexRuleSetsScan(Global.dependencyRegexRuleSets["check"], file)
-        );
-      } else if ([".sh", ".bash", ".bat", ".cmd"].includes(ext)) {
-        hits.push({
-          //TODO add reference
-          severity: "WARNING",
-          message: "Package includes OS scripts - you should verify them",
-          id: "has-os-scripts",
-        });
-      }
-    }
-
-    finalHits[moduleName] = hits;
   }
-  return finalHits;
+
+  return hits;
 }
 
 //Misc Functions

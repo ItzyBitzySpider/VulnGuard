@@ -47,7 +47,10 @@ function updateDiagnostics(files) {
   }
 
   if (files)
-    files.forEach((filePath) => update(Global.vulns.get(filePath), filePath));
+    files.forEach((filePath) => {
+      const docVulns = Global.vulns.get(filePath);
+      if (docVulns) update(docVulns, filePath);
+    });
   else Global.vulns.forEach(update);
 }
 

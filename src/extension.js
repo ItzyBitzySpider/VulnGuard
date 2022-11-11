@@ -65,8 +65,8 @@ async function activate(context) {
       "dependency",
       "Unsecure Dependencies",
       async (file) => {
-        console.log(file, path.dirname(file));
-        await analyzePackage(path.dirname(file));
+        const x = await analyzePackage(path.dirname(file));
+        console.log(x);
       },
       () => ({
         enabled: Global.dependencyRegexRuleSets,
