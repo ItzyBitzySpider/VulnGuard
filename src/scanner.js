@@ -1,4 +1,8 @@
-const { getDisabledRules, setDisabledRules, getUserRulesets } = require("./settings");
+const {
+  getDisabledRules,
+  setDisabledRules,
+  getUserRulesets,
+} = require("./settings");
 const promisify = require("util").promisify;
 const execFile = require("child_process").execFile;
 const path = require("path");
@@ -9,6 +13,7 @@ const execFileAsync = promisify(execFile);
 const Global = require("./globals");
 const vscode = require("vscode");
 const crypto = require("crypto");
+const https = require("https");
 const os = require("os");
 
 //SEMGREP FUNCTION
@@ -51,7 +56,8 @@ async function semgrepRuleSetsScan(configs, path, exclude = null) {
 }
 
 //REGEX FUNCTION
-async function regexRuleSetsScanText(ruleSets, text) { //TODO: Find better way
+async function regexRuleSetsScanText(ruleSets, text) {
+  //TODO: Find better way
   return await regexRuleSetsScan(ruleSets, writeToTempFile(text));
 }
 
@@ -166,23 +172,27 @@ function applyRegexCheck(node, parent_type, text) {
 //Dependency Check
 function npmRegistryCheck(packageName, filePath) {
   return new Promise((resolve, reject) => {
-    const data = fs.readFileSync(filePath, 'utf8');
+    const data = fs.readFileSync(filePath, "utf8");
     const packageManifest = JSON.parse(data);
     const currentVersion = packageManifest.version;
     let result = null;
 
     https.get(`https://registry.npmjs.org/${packageName}`, (response) => {
       if (response.status >= 400) {
-        reject(new Error(`Request to ${response.url} failed with HTTP ${response.status}`));
+        reject(
+          new Error(
+            `Request to ${response.url} failed with HTTP ${response.status}`
+          )
+        );
       }
 
-      var body = '';
+      var body = "";
 
-      response.on('data', (chunk) => {
+      response.on("data", (chunk) => {
         body += chunk.toString();
       });
 
-      response.on('end', () => {
+      response.on("end", () => {
         const packageInfo = JSON.parse(body);
         const versions = Object.keys(packageInfo.time);
         const previousVersion = versions[versions.indexOf(currentVersion) - 1];
@@ -192,9 +202,10 @@ function npmRegistryCheck(packageName, filePath) {
         //Taken from https://github.com/spaceraccoon/npm-scan/
         if (currentVersionDate - previousVersionDate > 63072000000) {
           result = {
-            id: 'lastUpdated',
-            message: 'Unusually long time between previous and current version',
-            reference: 'https://snyk.io/blog/malicious-code-found-in-npm-package-event-stream/',
+            id: "lastUpdated",
+            message: "Unusually long time between previous and current version",
+            reference:
+              "https://snyk.io/blog/malicious-code-found-in-npm-package-event-stream/",
             severity: "WARNING",
           };
         }
@@ -202,19 +213,20 @@ function npmRegistryCheck(packageName, filePath) {
         //TODO add reference
         if (new Date() - currentVersionDate > 15768000000) {
           result += {
-            id: 'unmaintained-package',
-            message: 'Unmaintained package - Consider switching to a maintained package',
+            id: "unmaintained-package",
+            message:
+              "Unmaintained package - Consider switching to a maintained package",
             severity: "WARNING",
           };
         }
-        
+
         resolve(result);
       });
     });
   });
 }
 
-export async function analyzePackage(dir) {
+async function analyzePackage(dir) {
   var finalHits = [];
 
   var modulePaths = getTopLevelDirectories(path.join(dir, "node_modules"));
@@ -222,20 +234,39 @@ export async function analyzePackage(dir) {
     var hits = [];
     const moduleName = path.basename(modulePath);
 
-    const manifest = fs.readFileSync(path.join(modulePath, "package.json"), "utf8");
+    const manifest = fs.readFileSync(
+      path.join(modulePath, "package.json"),
+      "utf8"
+    );
     const dat = JSON.parse(manifest);
 
     //TODO: Remove line numbers, and range since they are completely wrong
     if (dat["main"]) {
-      hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets["manifest.main"], JSON.stringify(dat["main"])));
+      hits = hits.concat(
+        await regexRuleSetsScanText(
+          Global.dependencyRegexRuleSets["manifest.main"],
+          JSON.stringify(dat["main"])
+        )
+      );
     }
     if (dat["scripts"]) {
-      hits = hits.concat(await regexRuleSetsScanText(Global.dependencyRegexRuleSets["manifest.scripts"], JSON.stringify(dat["scripts"])));
+      hits = hits.concat(
+        await regexRuleSetsScanText(
+          Global.dependencyRegexRuleSets["manifest.scripts"],
+          JSON.stringify(dat["scripts"])
+        )
+      );
     }
 
     //Taken from https://github.com/mbalabash/sdc-check
-    let hasNoSourceCodeRefInHomepage = typeof dat.homepage !== 'string' || (!dat.homepage.includes('github') && !dat.homepage.includes('gitlab'));
-    let hasNoSourceCodeRefInRepository = typeof dat.repository !== 'object' ||  typeof dat.repository.url !== 'string' || (!dat.repository.url.includes('github') && !dat.repository.url.includes('gitlab'));
+    let hasNoSourceCodeRefInHomepage =
+      typeof dat.homepage !== "string" ||
+      (!dat.homepage.includes("github") && !dat.homepage.includes("gitlab"));
+    let hasNoSourceCodeRefInRepository =
+      typeof dat.repository !== "object" ||
+      typeof dat.repository.url !== "string" ||
+      (!dat.repository.url.includes("github") &&
+        !dat.repository.url.includes("gitlab"));
     if (hasNoSourceCodeRefInHomepage && hasNoSourceCodeRefInRepository) {
       hits.push({
         //TODO add reference
@@ -245,18 +276,30 @@ export async function analyzePackage(dir) {
       });
     }
 
-    await npmRegistryCheck(moduleName, path.join(modulePath, "package.json"))
-      .then(
-        resolve => hits.concat(resolve),
-        reject => console.warn("Unable to perform npm registry check on module", moduleName, "due to", reject)
-      );
-      
+    await npmRegistryCheck(
+      moduleName,
+      path.join(modulePath, "package.json")
+    ).then(
+      (resolve) => hits.concat(resolve),
+      (reject) =>
+        console.warn(
+          "Unable to perform npm registry check on module",
+          moduleName,
+          "due to",
+          reject
+        )
+    );
+
     var files = getFilesRecursively(modulePath);
     for (const file of files) {
       const ext = path.extname(file);
-      if (['.coffee', '.js', '.jsx', '.ts', '.tsx', '.mjs', '.json'].includes(ext)) {
-        hits = hits.concat(await regexRuleSetsScan(Global.dependencyRegexRuleSets["check"], file));
-      } else if (['.sh', '.bash', '.bat', '.cmd'].includes(ext)) {
+      if (
+        [".coffee", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".json"].includes(ext)
+      ) {
+        hits = hits.concat(
+          await regexRuleSetsScan(Global.dependencyRegexRuleSets["check"], file)
+        );
+      } else if ([".sh", ".bash", ".bat", ".cmd"].includes(ext)) {
         hits.push({
           //TODO add reference
           severity: "WARNING",
@@ -273,7 +316,10 @@ export async function analyzePackage(dir) {
 
 //Misc Functions
 function writeToTempFile(text) {
-  const tmpPath = path.join(os.tmpdir(), crypto.randomBytes(16).toString('hex'));
+  const tmpPath = path.join(
+    os.tmpdir(),
+    crypto.randomBytes(16).toString("hex")
+  );
   fs.writeFileSync(tmpPath, text, "utf8");
   return tmpPath;
 }
@@ -385,7 +431,7 @@ function _loadRegexRuleSet(path) {
       f_fix = false,
       f_reference = false,
       f_case_sensitive = false;
-    regex_type = "";
+    let regex_type = "";
     for (const propertyName of propertyNames) {
       if (propertyName === "id") {
         f_id = true;
@@ -435,7 +481,7 @@ function _loadRegexRuleSet(path) {
     if (!f_regex) {
       throw "rule is missing 'regex'/'regex_and'/'regex_or'/'regex_not' field";
     }
-    if(!f_case_sensitive) {
+    if (!f_case_sensitive) {
       rule.case_sensitive = true; //Case sensitive by default
     }
 
@@ -450,7 +496,10 @@ function _loadRegexRuleSet(path) {
         validateRegexTree(rule.regex, rule.case_sensitive);
       } else {
         //TODO: Should val_type be strictly enforced?
-        rule.regex = new RegExp(rule.regex, "g" + (rule.case_sensitive ? "" : "i")); //Compile regex while validating
+        rule.regex = new RegExp(
+          rule.regex,
+          "g" + (rule.case_sensitive ? "" : "i")
+        ); //Compile regex while validating
       }
     } else if (regex_type === "regex_or") {
       if (typeof rule.regex_or !== "object") {
@@ -466,7 +515,10 @@ function _loadRegexRuleSet(path) {
       if (typeof rule.regex_not === "object") {
         throw "regex_not cannot be used on a regex subtree";
       } //TODO: Should val_type be strictly enforced?
-      rule.regex_not = new RegExp(rule.regex_not, "g" + (rule.case_sensitive ? "" : "i")); //Compile regex while validating
+      rule.regex_not = new RegExp(
+        rule.regex_not,
+        "g" + (rule.case_sensitive ? "" : "i")
+      ); //Compile regex while validating
 
       rule.regex = [{ regex_not: rule.regex_not }]; //Internally make regex_not a subfield of regex
       delete rule.regex_not;
@@ -521,12 +573,15 @@ function initScanner(context) {
 
   //Load all Regex RuleSets into memory
   loadRegexRuleSets(path.join(context.extensionPath, "files", "regex_rules"));
-  if (userRulesets["regex"]) { //There are user-created Regex RuleSets
+  if (userRulesets["regex"]) {
+    //There are user-created Regex RuleSets
     for (const regexRuleset of userRulesets["regex"]) {
       const pathType = getPathType(regexRuleset);
-      if (pathType === 0) { //File
+      if (pathType === 0) {
+        //File
         loadRegexRuleSet(regexRuleset);
-      } else if (pathType === 1) { //Directory
+      } else if (pathType === 1) {
+        //Directory
         loadRegexRuleSets(regexRuleset);
       } else {
         console.error(
@@ -545,17 +600,21 @@ function initScanner(context) {
     loadSemgrepRuleSets(
       path.join(context.extensionPath, "files", "semgrep_rules")
     );
-    if (userRulesets["semgrep"]) { //There are user-created Semgrep RuleSets
+    if (userRulesets["semgrep"]) {
+      //There are user-created Semgrep RuleSets
       for (const semgrepRuleset of userRulesets["semgrep"]) {
-        if (semgrepRuleset.startsWith("p/")) { //Semgrep Repository
+        if (semgrepRuleset.startsWith("p/")) {
+          //Semgrep Repository
           loadSemgrepRuleSet(semgrepRuleset);
           continue;
         }
 
         const pathType = getPathType(semgrepRuleset);
-        if (pathType === 0) { //File
+        if (pathType === 0) {
+          //File
           loadSemgrepRuleSet(semgrepRuleset);
-        } else if (pathType === 1) { //Directory
+        } else if (pathType === 1) {
+          //Directory
           loadSemgrepRuleSets(semgrepRuleset);
         } else {
           console.error(
@@ -704,10 +763,18 @@ function initDependencyScanner(context) {
     //Wrap around function _loadRegexRuleSet() to catch exceptions thrown
     try {
       var tmp = _loadRegexRuleSet(path);
-      if (!Global.dependencyRegexRuleSets[dependencyType]) Global.dependencyRegexRuleSets[dependencyType] = [];
+      if (!Global.dependencyRegexRuleSets[dependencyType])
+        Global.dependencyRegexRuleSets[dependencyType] = [];
       Global.dependencyRegexRuleSets[dependencyType].push(tmp);
     } catch (error) {
-      throw "Unable to load Dependency (", dependencyType, ") Regex RuleSet", path, "due to error:", error;
+      throw (
+        ("Unable to load Dependency (",
+        dependencyType,
+        ") Regex RuleSet",
+        path,
+        "due to error:",
+        error)
+      );
     }
   }
 
@@ -719,9 +786,18 @@ function initDependencyScanner(context) {
   }
 
   //Load all Dependency Regex RuleSets into memory
-  loadDependencyRegexRuleSets(path.join(context.extensionPath, "files", "dep_check_rules"), "check");
-  loadDependencyRegexRuleSets(path.join(context.extensionPath, "files", "dep_manifest_main_rules"), "manifest.main");
-  loadDependencyRegexRuleSets(path.join(context.extensionPath, "files", "dep_manifest_scripts_rules"), "manifest.scripts");
+  loadDependencyRegexRuleSets(
+    path.join(context.extensionPath, "files", "dep_check_rules"),
+    "check"
+  );
+  loadDependencyRegexRuleSets(
+    path.join(context.extensionPath, "files", "dep_manifest_main_rules"),
+    "manifest.main"
+  );
+  loadDependencyRegexRuleSets(
+    path.join(context.extensionPath, "files", "dep_manifest_scripts_rules"),
+    "manifest.scripts"
+  );
 
   return Global.dependencyRegexRuleSets;
 }
