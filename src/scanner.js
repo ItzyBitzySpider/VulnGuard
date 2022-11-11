@@ -240,14 +240,14 @@ function npmRegistryCheck(packageName, filePath) {
   });
 }
 
-function loadYarnLock() { //TODO: Test if this works
+async function loadYarnLock() { //TODO: Test if this works
   const fileset = await vscode.workspace.findFiles("yarn.lock");
-  const yarkLockPath = fileset[0].path;
+  const yarnLockPath = fileset[0].path;
   return lockfile.parse(fs.readFileSync(yarnLockPath, "utf8")).object;
 }
 
 async function analyzePackage(context) {
-  let yarnLock = loadYarnLock(),
+  let yarnLock = await loadYarnLock(),
     cached = getCachedPackageHits(context),
     cacheHits = {},
     hits = {};
