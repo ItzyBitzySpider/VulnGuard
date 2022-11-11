@@ -324,63 +324,67 @@ async function analyzePackage(dir) {
       promiseArr.push(
         ...fileset.map((uri) => {
           return async () => {
-            const start = performance.now();
-            const moduleName = uri.fsPath.match(
-              new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
-            )[1];
-            if (!hits[moduleName]) hits[moduleName] = [];
+            try {
+              const start = performance.now();
+              const moduleName = uri.fsPath.match(
+                new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
+              )[1];
+              if (!hits[moduleName]) hits[moduleName] = [];
 
-            const dat = JSON.parse(fs.readFileSync(uri.fsPath, "utf8"));
+              const dat = JSON.parse(fs.readFileSync(uri.fsPath, "utf8"));
 
-            //TODO: Remove line numbers, and range since they are completely wrong
-            const datChecks = [];
-            if (dat["main"]) {
-              datChecks.push(
-                regexRuleSetsScan(
-                  Global.dependencyRegexRuleSets["manifest.main"],
-                  JSON.stringify(dat["main"]),
-                  true
-                )
-              );
+              //TODO: Remove line numbers, and range since they are completely wrong
+              const datChecks = [];
+              if (dat["main"]) {
+                datChecks.push(
+                  regexRuleSetsScan(
+                    Global.dependencyRegexRuleSets["manifest.main"],
+                    JSON.stringify(dat["main"]),
+                    true
+                  )
+                );
+              }
+              if (dat["scripts"]) {
+                datChecks.push(
+                  regexRuleSetsScan(
+                    Global.dependencyRegexRuleSets["manifest.scripts"],
+                    JSON.stringify(dat["scripts"]),
+                    true
+                  )
+                );
+              }
+
+              //Taken from https://github.com/mbalabash/sdc-check
+              let hasNoSourceCodeRefInHomepage =
+                typeof dat.homepage !== "string" ||
+                (!dat.homepage.includes("github") &&
+                  !dat.homepage.includes("gitlab"));
+              let hasNoSourceCodeRefInRepository =
+                typeof dat.repository !== "object" ||
+                typeof dat.repository.url !== "string" ||
+                (!dat.repository.url.includes("github") &&
+                  !dat.repository.url.includes("gitlab"));
+              if (
+                hasNoSourceCodeRefInHomepage &&
+                hasNoSourceCodeRefInRepository
+              ) {
+                hits[moduleName].push({
+                  //TODO add reference
+                  severity: "WARNING",
+                  message: "No source code repository found for package",
+                  id: "no-source-code-repository",
+                });
+              }
+
+              const res = await Promise.all(datChecks);
+              hits[moduleName].push(...res);
+
+              const duration = performance.now() - start;
+              if (duration > 60000)
+                console.warn(`<C> scan for ${uri.fsPath} took ${duration}ms`);
+            } catch (e) {
+              console.warn("Invalid JSON found in " + uri.fsPath);
             }
-            if (dat["scripts"]) {
-              datChecks.push(
-                regexRuleSetsScan(
-                  Global.dependencyRegexRuleSets["manifest.scripts"],
-                  JSON.stringify(dat["scripts"]),
-                  true
-                )
-              );
-            }
-
-            //Taken from https://github.com/mbalabash/sdc-check
-            let hasNoSourceCodeRefInHomepage =
-              typeof dat.homepage !== "string" ||
-              (!dat.homepage.includes("github") &&
-                !dat.homepage.includes("gitlab"));
-            let hasNoSourceCodeRefInRepository =
-              typeof dat.repository !== "object" ||
-              typeof dat.repository.url !== "string" ||
-              (!dat.repository.url.includes("github") &&
-                !dat.repository.url.includes("gitlab"));
-            if (
-              hasNoSourceCodeRefInHomepage &&
-              hasNoSourceCodeRefInRepository
-            ) {
-              hits[moduleName].push({
-                //TODO add reference
-                severity: "WARNING",
-                message: "No source code repository found for package",
-                id: "no-source-code-repository",
-              });
-            }
-
-            const res = await Promise.all(datChecks);
-            hits[moduleName].push(...res);
-
-            const duration = performance.now() - start;
-            if (duration > 60000)
-              console.warn(`<C> scan for ${uri.fsPath} took ${duration}ms`);
 
             // await npmRegistryCheck(moduleName, uri.fsPath).then(
             //   (resolve) => hits[moduleName].push(...resolve),
@@ -400,15 +404,10 @@ async function analyzePackage(dir) {
   await Promise.all([checkA, checkB, checkC]);
   console.log("Starting Pool", promiseArr);
   console.time("pp");
-  await promisePool.start().then(
-    () => {
-      console.log("Done");
-      console.timeEnd("pp");
-    },
-    (e) => {
-      console.log("Promise rejected: " + e.message);
-    }
-  );
+  await promisePool.start().then(() => {
+    console.log("Done");
+    console.timeEnd("pp");
+  });
 
   // var modulePaths = getTopLevelDirectories(path.join(dir, "node_modules"));
   // for (const modulePath of modulePaths) {
