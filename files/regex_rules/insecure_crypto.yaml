@@ -1,0 +1,25 @@
+rules:
+#taken from https://github.com/insidersec/insider
+  - id: node-tls-reject-unauthorised
+    message: 'NODE_TLS_REJECT_UNAUTHORIZED option being disabled allows the Node.js server to accept certificates that are self-signed, allowing an attacker to bypass the TLS security layer.'
+    severity: WARNING
+    case_sensitive: false
+    regex: '(?:\[|)(?:''|")NODE_TLS_REJECT_UNAUTHORIZED(?:''|")(?:\]|)\s*=\s*(?:''|")*0(?:''|")'
+  
+  - id: ssl-verifypeer
+    message: 'The SSL_VERIFYPEER option controls the internal Node.js library, causing HTTPS requests to stop checking if a secure cryptographic tunnel has actually been established between the servers, allowing an attacker to intercept client communication in open text.'
+    severity: WARNING
+    case_sensitive: false
+    regex: 'SSL_VERIFYPEER\s*:\s*0'
+
+  - id: weak-hash
+    message: 'A weak cryptographic hash function is detected and should not be used. Consider using SHA512 with salts instead.'
+    severity: WARNING
+    case_sensitive: false
+    regex_or: 
+      - regex: 'createHash\((?:''|")md5(?:''|")'
+      - regex: 'createHash\((?:''|")sha1(?:''|")'
+
+
+
+  

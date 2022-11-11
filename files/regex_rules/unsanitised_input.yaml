@@ -1,0 +1,74 @@
+rules:
+#taken from https://github.com/insidersec/insider
+  - id: untreated-input-sql-injection
+    message: 'Passing untreated parameters to queries in the database can cause an SQL injection, or even a NoSQL query injection.'
+    severity: WARNING
+    case_sensitive: false
+    regex: '\.(find|drop|create|explain|delete|count|bulk|copy).*\n*{.*\n*\$where(?:''|"|):.*(?:req\.|req\.query|req\.body|req\.param)'
+
+  - id: untreated-input-xss
+    message: 'Passing user data directly to the HTTP response headers can lead to XSS.'
+    severity: WARNING
+    case_sensitive: false
+    regex: 'res\.(write|send)\(.*(?:req\.|req\.query|req\.body|req\.param)'
+
+  - id: untreated-input-xss-http-header
+    message: 'X-XSS-Protection HTTP header is not set or not set to 1; mode=block. This header can prevent some attacks, including some reflected XSS attacks.'
+    severity: WARNING
+    case_sensitive: false
+    regex: '(?:\[|)(?:''|")X-XSS-Protection(?:''|")(?:\]|)\s*=\s*(?:''|")*0(?:''|")'
+
+  - id: untreated-input-request-ssrf
+    message: 'Passing user data directly as parameters for the unhandled request method can lead to SSRF.'
+    severity: WARNING
+    case_sensitive: false
+    regex:
+      - regex: 'require\((?:''|")request(?:''|")\)'
+      - regex_and: 'request\(.*(req\.|req\.query|req\.body|req\.param)'
+
+  - id: untreated-input-request-get-ssrf
+    message: 'Passing user data directly as parameters for the unhandled request.get method can lead to SSRF.'
+    severity: WARNING
+    case_sensitive: false
+    regex:
+      - regex: 'require\((?:''|")request(?:''|")\)'
+      - regex_and: '\.get\(.*(req\.|req\.query|req\.body|req\.param)'
+
+  - id: untreated-input-needle-get-ssrf
+    message: 'Passing user data directly as parameters for the needle.get method can lead to SSRF.'
+    severity: WARNING
+    case_sensitive: false
+    regex:
+      - regex: 'require\((?:''|")needle(?:''|")\)'
+      - regex_and: '\.get\(.*(req\.|req\.query|req\.body|req\.param)'
+
+  - id: untreated-input-exec
+    message: 'Passing user data directly as parameters for the exec method can lead to Remote Code Execution.'
+    severity: WARNING
+    case_sensitive: false
+    regex:
+      - regex: 'require\((?:''|")child_process(?:''|")\)'
+      - regex_and: '\.exec\(.*(req\.|req\.query|req\.body|req\.param)'
+
+  - id: untreated-input-createreadstrem
+    message: 'Passing user data directly as to createReadStream can lead to Directory Traversal.'
+    severity: WARNING
+    case_sensitive: false
+    regex_or:
+      - regex: '\.createReadStream\(.*(?:req\.|req\.query|req\.body|req\.param)'
+      - regex: '\.readFile\(.*(?:req\.|req\.query|req\.body|req\.param)'
+  
+  - id: untreated-input-yaml-load
+    message: 'Passing user data directly as parameters for the yaml.load method can lead to Remote Code Execution.'
+    severity: WARNING
+    case_sensitive: false
+    reference: "https://www.npmjs.com/advisories/813"
+    regex: '(require\('js-yaml'\)\.load\(|yaml\.load\()'
+
+
+
+
+
+
+
+  
