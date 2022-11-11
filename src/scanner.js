@@ -2,6 +2,8 @@ const {
   getDisabledRules,
   setDisabledRules,
   getUserRulesets,
+  getCachedPackageHits,
+  setCachedPackageHits
 } = require("./settings");
 const promisify = require("util").promisify;
 const execFile = require("child_process").execFile;
@@ -237,8 +239,10 @@ function npmRegistryCheck(packageName, filePath) {
   });
 }
 
-async function analyzePackage() {
-  let hits = {};
+async function analyzePackage(context) {
+  let cached = getCachedPackageHits(context),
+    cacheHits = [],
+    hits = {};
 
   function extListToSearch(input) {
     return (
@@ -284,6 +288,10 @@ async function analyzePackage() {
             const moduleName = uri.fsPath.match(
               new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
             )[1];
+            if (cached[moduleName]) { //Skip since cached, TODO: module version???
+              cacheHits.push(moduleName);
+              continue;
+            }
             if (!hits[moduleName]) hits[moduleName] = [];
             const res = await regexRuleSetsScan(
               Global.dependencyRegexRuleSets["check"],
@@ -308,6 +316,10 @@ async function analyzePackage() {
             const moduleName = uri.fsPath.match(
               new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
             )[1];
+            if (cached[moduleName]) { //Skip since cached, TODO: module version???
+              cacheHits.push(moduleName);
+              continue;
+            }
             if (!hits[moduleName]) hits[moduleName] = [];
             hits[moduleName].push({
               //TODO add reference
@@ -336,6 +348,10 @@ async function analyzePackage() {
               const moduleName = uri.fsPath.match(
                 new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
               )[1];
+              if (cached[moduleName]) { //Skip since cached, TODO: module version???
+                cacheHits.push(moduleName);
+                continue;
+              }
               if (!hits[moduleName]) hits[moduleName] = [];
 
               const dat = JSON.parse(fs.readFileSync(uri.fsPath, "utf8"));
@@ -436,6 +452,18 @@ async function analyzePackage() {
   //     console.warn(e.message);
   //   }
   // }
+
+  //All modules currently stored in hits are not cached, and have yet to be cached
+  const propertyNames = Object.getOwnPropertyNames(hits);
+  for (const propertyName of propertyNames) {
+    cached[propertyName] = hits[propertyName];
+  }
+  setCachedPackageHits(context, cached);
+
+  //All modules currently stored in cacheHits are currently used, but have yet to be included into hits
+  for (const cacheHit of cacheHits) {
+    hits[cacheHit] = cached[cacheHit];
+  }
 
   return hits;
 }

@@ -187,6 +187,42 @@ function deleteUserRuleset(context, feature, path) {
   );
 }
 
+let cachedPackageHits = undefined;
+function getCachedPackageHitsPath(context) {
+  const dir = getGlobalPath(context);
+  return path.join(dir, "cached_package_hits.json");
+}
+/**
+ * @param {vscode.ExtensionContext} context
+ */
+function getCachedPackageHits(context) {
+  if (cachedPackageHits) return [...cachedPackageHits];
+  if (!context) return undefined;
+
+  const cachedPackageHitsPath = getCachedPackageHitsPath(context);
+  if (!fs.existsSync(cachedPackageHitsPath))
+    fs.writeFileSync(cachedPackageHitsPath, JSON.stringify({}), "utf8");
+  cachedPackageHits = JSON.parse(fs.readFileSync(cachedPackageHitsPath, "utf8"));
+  return cachedPackageHits;
+}
+/**
+ * @param {vscode.ExtensionContext} context
+ * @param {object[]} cached
+ */
+function setCachedPackageHits(context, cached) {
+  cachedPackageHits = cached;
+  const cachedPackageHitsPath = getCachedPackageHitsPath(context);
+  fs.writeFile(
+    cachedPackageHitsPath,
+    JSON.stringify(cached),
+    { encoding: "utf8" },
+    function (err) {
+      if (err) return console.log(err);
+      console.log(`Written to ${cachedPackageHitsPath}`);
+    }
+  );
+}
+
 module.exports = {
   getFeatures,
   setFeature,
@@ -198,4 +234,6 @@ module.exports = {
   getUserRulesets,
   addUserRuleset,
   deleteUserRuleset,
+  getCachedPackageHits,
+  setCachedPackageHits
 };

@@ -65,7 +65,7 @@ async function activate(context) {
       "dependency",
       "Unsecure Dependencies",
       async (file) => {
-        const x = await analyzePackage(path.dirname(file));
+        const x = await analyzePackage(context);
         console.log(x);
       },
       () => ({
