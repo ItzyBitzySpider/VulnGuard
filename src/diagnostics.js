@@ -69,13 +69,13 @@ function isRuleDisabled(document, vuln) {
 }
 
 /**
- * @param {vscode.TextDocument} document
+ * @param {string} fsPath
  */
-function handleActiveEditorTextChange(document) {
-  updateDiagnostics([document.uri.fsPath]);
+function handleChange(fsPath) {
+  updateDiagnostics([fsPath]);
 }
 
 module.exports = {
   updateDiagnostics,
-  handleActiveEditorTextChange,
+  handleChange,
 };

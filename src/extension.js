@@ -71,30 +71,33 @@ async function activate(context) {
   });
 
   //onSave active document
-  // vscode.workspace.onDidSaveTextDocument(
-  //   (event) => {
-  //     if (event.uri.scheme !== "file") return;
-  //     console.log(event.uri);
-  //   },
-  //   null,
-  //   context.subscriptions
-  // );
-
-  //onEdit
-  let changeTimer;
-  vscode.workspace.onDidChangeTextDocument(
+  vscode.workspace.onDidSaveTextDocument(
     (event) => {
-      if (changeTimer) clearTimeout(changeTimer);
-      changeTimer = setTimeout(() => {
-        scanFile(context, event.document.uri.fsPath).then(() => {
-          diagnostics.handleActiveEditorTextChange(event.document);
-          updateWebview(context);
-        });
-      }, 1500);
+      if (event.uri.scheme !== "file") return;
+      scanFile(context, event.uri.fsPath).then(() => {
+        diagnostics.handleChange(event.uri.fsPath);
+        updateWebview(context);
+      });
     },
     null,
     context.subscriptions
   );
+
+  //onEdit
+  // let changeTimer;
+  // vscode.workspace.onDidChangeTextDocument(
+  //   (event) => {
+  //     if (changeTimer) clearTimeout(changeTimer);
+  //     changeTimer = setTimeout(() => {
+  //       scanFile(context, event.document.uri.fsPath).then(() => {
+  //         diagnostics.handleChange(event.document.uri.fsPath);
+  //         updateWebview(context);
+  //       });
+  //     }, 1500);
+  //   },
+  //   null,
+  //   context.subscriptions
+  // );
   // Change tab
   // vscode.window.onDidChangeActiveTextEditor(
   //   diagnostics.handleChangeActiveEditor,
