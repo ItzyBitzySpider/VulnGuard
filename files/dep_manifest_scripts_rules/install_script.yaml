@@ -11,5 +11,3 @@ rules:
       - regex: '\bpostinstall\b'
       - regex: '\bpreuninstall\b'
       - regex: '\bpostuninstall\b'
-    
-# CASE Insensitive

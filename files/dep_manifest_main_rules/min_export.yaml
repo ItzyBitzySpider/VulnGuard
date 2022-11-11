@@ -6,5 +6,3 @@ rules:
     reference: 'https://schneid.io/blog/event-stream-vulnerability-explained/'
     case_sensitive: false
     regex: '.*\.min'
-
-  # CASE Insensitive
