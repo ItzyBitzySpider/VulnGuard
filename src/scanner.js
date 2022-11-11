@@ -290,7 +290,7 @@ async function analyzePackage(context) {
             )[1];
             if (cached[moduleName]) { //Skip since cached, TODO: module version???
               cacheHits[moduleName] = true;
-              continue;
+              return;
             }
             if (!hits[moduleName]) hits[moduleName] = [];
             const res = await regexRuleSetsScan(
@@ -318,7 +318,7 @@ async function analyzePackage(context) {
             )[1];
             if (cached[moduleName]) { //Skip since cached, TODO: module version???
               cacheHits[moduleName] = true;
-              continue;
+              return;
             }
             if (!hits[moduleName]) hits[moduleName] = [];
             hits[moduleName].push({
@@ -350,7 +350,7 @@ async function analyzePackage(context) {
               )[1];
               if (cached[moduleName]) { //Skip since cached, TODO: module version???
                 cacheHits[moduleName] = true;
-                continue;
+                return;
               }
               if (!hits[moduleName]) hits[moduleName] = [];
 

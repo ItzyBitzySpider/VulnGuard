@@ -1,0 +1,35 @@
+rules:
+#taken from https://github.com/insidersec/insider
+  - id: insecure-eval
+    message: 'Eval is insecure and can lead to remote code execution'
+    severity: WARNING
+    case_sensitive: false
+    regex: '(eval\(.+)(?:req\.|req\.query|req\.body|req\.param)'
+  
+  - id: insecure-set-timeout
+    message: 'SetTimeout is insecure and can lead to remote code execution'
+    severity: WARNING
+    case_sensitive: false
+    regex: '(setTimeout\(.+)(req\.|req\.query|req\.body|req\.param)'
+
+  - id: insecure-set-interval
+    message: 'SetInterval is insecure and can lead to remote code execution'
+    severity: WARNING
+    case_sensitive: false
+    regex: '(setInterval\(.+)(req\.|req\.query|req\.body|req\.param)'
+
+  - id: insecure-handlebars-safestring
+    message: 'Handlebars SafeString is insecure and can lead to XSS'
+    severity: WARNING
+    case_sensitive: false
+    regex: 'handlebars\.SafeString\('
+
+  -id: insecure-redirect
+    message: 'Redirect is insecure and can lead to open redirect'
+    severity: WARNING
+    case_sensitive: false
+    regex: 'res\.redirect\('
+
+
+
+  

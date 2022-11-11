@@ -5,7 +5,7 @@ rules:
     severity: WARNING
     reference: 'https://hackernoon.com/im-harvesting-credit-card-numbers-and-passwords-from-your-site-here-s-how-9a8cb347c5b5'
     case_sensitive: false
-    regex: 'get\('Content-Security-Policy'\)'
+    regex: 'get\(''Content-Security-Policy''\)'
   - id: csp-prefetch-bypass
     message: 'Bypass Content Security Policy with DNS prefetch'
     severity: WARNING
