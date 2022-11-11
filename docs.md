@@ -28,8 +28,6 @@ Supply chain attacks --> Want to ensure dependecies and modules imported are saf
 
 When packages are installed/added, package.JSON is naturally modified in the process of installing/adding packages. VulnGuard scans all packages in `node_modules/` whenever package.JSON is updated. Should packages be detected as malicious, warnings will be shown on package.JSON to the developer. 
 
-(KIV)
-In addition, new rules will automatically be created to catch any code utilising such malicious packages. Developers who may not check package.JSON will be informed of malicious package when they attempt to import these packages in their code through the newly created rule. 
 
 Dependency Checking builds upon the work done by SpaceRaccoon in npm-scan and other sdc (simple dependency check). The following documents the various heuristics used to determine if a package is malicious. 
 
