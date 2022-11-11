@@ -198,7 +198,9 @@ function getFeatureEntries(feature) {
       ${Icons.add}
     </button>
     </div>
+    <div class="column">
     ${entries}
+    </div>
   </div>
   `;
 }
@@ -349,17 +351,19 @@ function updateWebview(context) {
             ${Icons.add}
           </button>
         </div>
-        ${ignoredRegex.reduce(
-          (prev, currRegex, idx) =>
-            prev +
-            `<div class="row">
-        <p style="flex: 1">${currRegex}</p>
-        <button id="ignore__button__${idx}" type="button">
-          ${Icons.trash}
-        </button>
-      </div>`,
-          ""
-        )}
+        <div class="column">
+          ${ignoredRegex.reduce(
+            (prev, currRegex, idx) =>
+              prev +
+              `<div class="row">
+          <p style="flex: 1">${currRegex}</p>
+          <button id="ignore__button__${idx}" type="button">
+            ${Icons.trash}
+          </button>
+        </div>`,
+            ""
+          )}
+        </div>
     </div>
       ${featureList.reduce((prev, curr) => prev + getFeatureEntries(curr), "")}
     </div>
