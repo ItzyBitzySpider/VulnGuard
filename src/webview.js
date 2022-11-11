@@ -44,6 +44,9 @@ function createWebview(context) {
     styles = panel.webview.asWebviewUri(
       vscode.Uri.file(path.join(context.extensionPath, "media", "styles.css"))
     );
+    panel.iconPath = vscode.Uri.file(
+      path.join(context.extensionPath, "media", "vulnguard.png")
+    );
     panel.onDidDispose(
       () => {
         panel = undefined;
