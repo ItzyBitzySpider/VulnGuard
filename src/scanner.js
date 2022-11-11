@@ -241,7 +241,7 @@ function npmRegistryCheck(packageName, filePath) {
 
 async function analyzePackage(context) {
   let cached = getCachedPackageHits(context),
-    cacheHits = [],
+    cacheHits = {},
     hits = {};
 
   function extListToSearch(input) {
@@ -289,7 +289,7 @@ async function analyzePackage(context) {
               new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
             )[1];
             if (cached[moduleName]) { //Skip since cached, TODO: module version???
-              cacheHits.push(moduleName);
+              cacheHits[moduleName] = true;
               continue;
             }
             if (!hits[moduleName]) hits[moduleName] = [];
@@ -317,7 +317,7 @@ async function analyzePackage(context) {
               new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
             )[1];
             if (cached[moduleName]) { //Skip since cached, TODO: module version???
-              cacheHits.push(moduleName);
+              cacheHits[moduleName] = true;
               continue;
             }
             if (!hits[moduleName]) hits[moduleName] = [];
@@ -349,7 +349,7 @@ async function analyzePackage(context) {
                 new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
               )[1];
               if (cached[moduleName]) { //Skip since cached, TODO: module version???
-                cacheHits.push(moduleName);
+                cacheHits[moduleName] = true;
                 continue;
               }
               if (!hits[moduleName]) hits[moduleName] = [];
@@ -454,15 +454,14 @@ async function analyzePackage(context) {
   // }
 
   //All modules currently stored in hits are not cached, and have yet to be cached
-  const propertyNames = Object.getOwnPropertyNames(hits);
-  for (const propertyName of propertyNames) {
-    cached[propertyName] = hits[propertyName];
+  for (const moduleName of Object.getOwnPropertyNames(hits)) {
+    cached[moduleName] = hits[moduleName];
   }
   setCachedPackageHits(context, cached);
 
   //All modules currently stored in cacheHits are currently used, but have yet to be included into hits
-  for (const cacheHit of cacheHits) {
-    hits[cacheHit] = cached[cacheHit];
+  for (const moduleName of Object.getOwnPropertyNames(cacheHits)) {
+    hits[moduleName] = cached[moduleName];
   }
 
   return hits;
