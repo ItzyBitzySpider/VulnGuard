@@ -157,7 +157,6 @@ class UnsafePackageCodeActionProvider {
    */
 
   provideCodeActions(document, range, context, token) {
-    console.log("PACKAGE.JSON");
     return context.diagnostics
       .filter((diagnostic) => diagnostic.code.target)
       .map(this.createDependencyCodeAction);
