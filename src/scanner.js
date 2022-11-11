@@ -242,7 +242,7 @@ function npmRegistryCheck(packageName, filePath) {
 
 async function loadYarnLock() { //TODO: Test if this works
   const fileset = await vscode.workspace.findFiles("yarn.lock");
-  const yarnLockPath = fileset[0].path;
+  const yarnLockPath = fileset[0].fsPath;
   return lockfile.parse(fs.readFileSync(yarnLockPath, "utf8")).object;
 }
 
