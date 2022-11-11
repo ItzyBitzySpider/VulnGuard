@@ -142,6 +142,42 @@ class FixVulnCodeActionProvider {
   }
 }
 
+class UnsafePackageCodeActionProvider {
+  constructor() {
+    this.providedCodeActionKinds = [vscode.CodeActionKind.QuickFix];
+  }
+
+  /**
+   *
+   * @param {vscode.TextDocument} document
+   * @param {vscode.Range} range
+   * @param {vscode.CodeActionContext} context
+   * @param {vscode.CancellationToken} token
+   * @returns {vscode.CodeAction[] | undefined}
+   */
+
+  provideCodeActions(document, range, context, token) {
+    console.log("PACKAGE.JSON");
+    return context.diagnostics
+      .filter((diagnostic) => diagnostic.code.target)
+      .map(this.createDependencyCodeAction);
+  }
+
+  createDependencyCodeAction(diagnostic) {
+    const readDocsAction = new vscode.CodeAction(
+      `Read more on ${diagnostic.code.value}`,
+      vscode.CodeActionKind.QuickFix
+    );
+    readDocsAction.command = {
+      title: "docs",
+      command: "vulnguard.docs",
+      arguments: [diagnostic.code.target],
+    };
+    return readDocsAction;
+  }
+}
+
 module.exports = {
   FixVulnCodeActionProvider,
+  UnsafePackageCodeActionProvider,
 };

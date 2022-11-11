@@ -4,7 +4,10 @@ const findSemgrep = require("./findSemgrep");
 const { createWebview, updateWebview } = require("./webview");
 const { Feature, setFeatureContext } = require("./feature");
 const Global = require("./globals");
-const { FixVulnCodeActionProvider } = require("./codeaction");
+const {
+  FixVulnCodeActionProvider,
+  UnsafePackageCodeActionProvider,
+} = require("./codeaction");
 const { setFeature, getFeatures, getUserRulesets } = require("./settings");
 const { scanWorkspace, scanFile } = require("./scanTrigger");
 const { renameVulns, deleteVulns } = require("./utils");
@@ -73,6 +76,11 @@ async function activate(context) {
 
   const packageJsonWatcher =
     vscode.workspace.createFileSystemWatcher("**/package.json");
+  const packageCodeActions = vscode.languages.registerCodeActionsProvider(
+    { language: "json", pattern: "**/package.json" },
+    new UnsafePackageCodeActionProvider()
+  );
+
   const watcher = vscode.workspace.createFileSystemWatcher("**/*.js");
   const vulnCodeActions = vscode.languages.registerCodeActionsProvider(
     { language: "javascript", scheme: "file" },
@@ -187,7 +195,8 @@ async function activate(context) {
       vscode.env.openExternal(uri)
     ),
     Global.vulnDiagnostics,
-    vulnCodeActions
+    vulnCodeActions,
+    packageCodeActions
   );
 }
 
