@@ -9,12 +9,17 @@ const { getIgnoredRegex } = require("./settings");
  * @param {string[] | undefined} enabledFeatures - Optional list of feature IDs. When given, only scans for enabledFeatures and adds to existing vulns. Scans all features if this parameter is not given
  */
 async function scan(fsPath, enabledFeatures) {
-  console.log("Scanning", fsPath);
   const tmpVulnList = [];
   for (const feature of Global.getFeatureList()) {
     if (!feature.isEnabled()) continue;
     if (enabledFeatures && !enabledFeatures.includes(feature.id)) continue;
+    if (
+      !enabledFeatures &&
+      Global.NON_STANDARD_SCAN_FEATURES.includes(feature.id)
+    )
+      continue;
 
+    console.log("Scanning", fsPath, `(${feature.id})`);
     const vuln = await feature.scanForVulns(fsPath);
     if (!vuln) continue;
     tmpVulnList.push(
@@ -45,15 +50,15 @@ async function scanIgnored(context, ignored) {
  * @param {vscode.ExtensionContext} context
  * @param {string[] | undefined} enabledFeatures - Optional list of feature IDs. When given, only scans for enabledFeatures and adds to existing vulns. Scans all features if this parameter is not given
  */
-async function scanWorkspace(context, enabledFeatures) {
+async function scanWorkspace(context, include, enabledFeatures) {
   const uris = await vscode.workspace.findFiles(
-    "**/*.js",
+    include,
     `{${getIgnoredRegex(context).join(",")}}`
   );
   await Promise.all(uris.map((uri) => scan(uri.fsPath, enabledFeatures)));
 }
 
-async function scanFile(context, filePath) {
+async function scanFile(context, filePath, enabledFeatures) {
   vscode.workspace.workspaceFolders.forEach((f) => {
     const fs = f.uri.fsPath + path.sep;
     if (filePath.startsWith(fs)) filePath = filePath.replace(fs, "");
@@ -63,7 +68,7 @@ async function scanFile(context, filePath) {
     `{${getIgnoredRegex(context).join(",")}}`,
     1
   );
-  if (uris.length > 0) await scan(uris[0].fsPath);
+  if (uris.length > 0) await scan(uris[0].fsPath, enabledFeatures);
   else console.warn("Cannot scan file: ", filePath);
 }
 

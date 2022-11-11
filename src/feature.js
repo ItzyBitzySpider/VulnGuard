@@ -51,7 +51,7 @@ class Feature {
 
   isEnabled() {
     const enabled = getFeatures(context)[this.id];
-    if (enabled === undefined) return undefined;
+    if (enabled === undefined) return true;
     return enabled;
   }
 

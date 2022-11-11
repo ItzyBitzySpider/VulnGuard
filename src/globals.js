@@ -38,6 +38,8 @@ var dependencyRegexRuleSets = {}; //Object of arrays
 
 var vulnDiagnostics = vscode.languages.createDiagnosticCollection("vulns");
 
+const NON_STANDARD_SCAN_FEATURES = ["dependency"];
+
 module.exports = {
   getFeatureList,
   regexRuleSets,
@@ -48,4 +50,5 @@ module.exports = {
   vulnDiagnostics,
   vulns,
   dependencyRegexRuleSets,
+  NON_STANDARD_SCAN_FEATURES,
 };

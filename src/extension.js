@@ -1,5 +1,6 @@
 const vscode = require("vscode");
 const diagnostics = require("./diagnostics");
+const path = require("path");
 const findSemgrep = require("./findSemgrep");
 const { createWebview, updateWebview } = require("./webview");
 const { Feature, setFeatureContext } = require("./feature");
@@ -13,6 +14,7 @@ const {
   initDependencyScanner,
   regexRuleSetsScan,
   semgrepRuleSetsScan,
+  analyzePackage,
 } = require("./scanner");
 
 //TODO file opened state independent diagnostics
@@ -58,24 +60,80 @@ async function activate(context) {
       })
     )
   );
+  featureList.push(
+    new Feature(
+      "dependency",
+      "Unsecure Dependencies",
+      async (file) => {
+        console.log(file, path.dirname(file));
+        await analyzePackage(path.dirname(file));
+      },
+      () => ({
+        enabled: Global.dependencyRegexRuleSets,
+        all: Global.dependencyRegexRuleSets,
+      })
+    )
+  );
 
+  const packageJsonWatcher =
+    vscode.workspace.createFileSystemWatcher("**/package.json");
   const watcher = vscode.workspace.createFileSystemWatcher("**/*.js");
   const vulnCodeActions = vscode.languages.registerCodeActionsProvider(
     { language: "javascript", scheme: "file" },
     new FixVulnCodeActionProvider()
   );
 
-  scanWorkspace(context).then(() => {
+  Promise.all([
+    scanWorkspace(context, "**/*.js"),
+    scanWorkspace(context, "**/package.json", ["dependency"]),
+  ]).then(() => {
     diagnostics.updateDiagnostics();
     createWebview(context);
   });
 
-  //onSave active document
-  vscode.workspace.onDidSaveTextDocument(
-    (event) => {
-      if (event.uri.scheme !== "file") return;
-      scanFile(context, event.uri.fsPath).then(() => {
-        diagnostics.handleChange(event.uri.fsPath);
+  //onCreate
+  watcher.onDidCreate(
+    (uri) => {
+      if (uri.scheme !== "file") return;
+      scanFile(context, uri.fsPath).then(() => {
+        diagnostics.handleChange(uri.fsPath);
+        updateWebview(context);
+      });
+    },
+    null,
+    context.subscriptions
+  );
+  //onSave
+  watcher.onDidChange(
+    (uri) => {
+      if (uri.scheme !== "file") return;
+      scanFile(context, uri.fsPath).then(() => {
+        diagnostics.handleChange(uri.fsPath);
+        updateWebview(context);
+      });
+    },
+    null,
+    context.subscriptions
+  );
+
+  //onCreate
+  packageJsonWatcher.onDidCreate(
+    (uri) => {
+      if (uri.scheme !== "file") return;
+      scanFile(context, uri.fsPath, ["dependency"]).then(() => {
+        diagnostics.handleChange(uri.fsPath);
+        updateWebview(context);
+      });
+    },
+    null,
+    context.subscriptions
+  );
+  //onSave
+  packageJsonWatcher.onDidChange(
+    (uri) => {
+      if (uri.scheme !== "file") return;
+      scanFile(context, uri.fsPath, ["dependency"]).then(() => {
+        diagnostics.handleChange(uri.fsPath);
         updateWebview(context);
       });
     },
@@ -134,11 +192,6 @@ async function activate(context) {
     vscode.commands.registerCommand("vulnguard.docs", (uri) =>
       vscode.env.openExternal(uri)
     ),
-    //onCreate
-    watcher.onDidCreate((uri) => {
-      if (uri.scheme !== "file") return;
-      scanFile(context, uri.fsPath).then(() => updateWebview(context));
-    }),
     Global.vulnDiagnostics,
     vulnCodeActions
   );

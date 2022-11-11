@@ -163,6 +163,8 @@ function createWebview(context) {
  * @returns {string}
  */
 function getFeatureEntries(feature) {
+  if (Global.NON_STANDARD_SCAN_FEATURES.includes(feature.id)) return "";
+
   const rulesetData = feature.getRulesetData();
   let entries = "";
   [...rulesetData.rulesets.entries()].sort().forEach(([path, enabled]) => {
@@ -177,6 +179,7 @@ function getFeatureEntries(feature) {
     </button>
   </div>`;
   });
+
   return `<h2>${feature.title}</h2>
   ${
     feature.id === "semgrep" && (isWindows || !Global.semgrepServer)
