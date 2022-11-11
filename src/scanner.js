@@ -244,9 +244,11 @@ async function analyzePackage(dir) {
   const promisePool = new PromisePool(() => {
     if (!promiseArr.length) return null;
     const f = promiseArr.splice(-1)[0]();
-    console.log(promiseArr.length);
+    if (promiseArr.length % 500 === 0) console.log(promiseArr.length);
     return f;
   }, MAX_THREAD);
+
+  const EXCLUDE_DIRS = "{node_modules/**/*.d.ts}";
 
   const checkA = vscode.workspace
     .findFiles(
@@ -259,41 +261,51 @@ async function analyzePackage(dir) {
         ".mjs",
         ".json",
       ]),
-      "**/*.d.ts"
+      EXCLUDE_DIRS
     )
-    .then(async (fileset) => {
-      console.log("A len", fileset.length);
+    .then((fileset) => {
       promiseArr.push(
-        ...fileset.map((uri) => async () => {
-          const moduleName = uri.fsPath.match(
-            new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
-          )[1];
-          if (!hits[moduleName]) hits[moduleName] = [];
-          const res = await regexRuleSetsScan(
-            Global.dependencyRegexRuleSets["check"],
-            uri.fsPath
-          );
-          hits[moduleName].push(res);
+        ...fileset.map((uri) => {
+          return async () => {
+            const start = performance.now();
+            const moduleName = uri.fsPath.match(
+              new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
+            )[1];
+            if (!hits[moduleName]) hits[moduleName] = [];
+            const res = await regexRuleSetsScan(
+              Global.dependencyRegexRuleSets["check"],
+              uri.fsPath
+            );
+            hits[moduleName].push(res);
+            const duration = performance.now() - start;
+            if (duration > 60000)
+              console.warn(`<A> scan for ${uri.fsPath} took ${duration}ms`);
+          };
         })
       );
     });
 
   const checkB = vscode.workspace
-    .findFiles(extListToSearch([".sh", ".bash", ".bat", ".cmd"]))
-    .then(async (fileset) => {
-      console.log("B len", fileset.length);
+    .findFiles(extListToSearch([".sh", ".bash", ".bat", ".cmd"]), EXCLUDE_DIRS)
+    .then((fileset) => {
       promiseArr.push(
-        ...fileset.map((uri) => async () => {
-          const moduleName = uri.fsPath.match(
-            new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
-          )[1];
-          if (!hits[moduleName]) hits[moduleName] = [];
-          hits[moduleName].push({
-            //TODO add reference
-            severity: "WARNING",
-            message: "Package includes OS scripts - you should verify them",
-            id: "has-os-scripts",
-          });
+        ...fileset.map((uri) => {
+          return async () => {
+            const start = performance.now();
+            const moduleName = uri.fsPath.match(
+              new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
+            )[1];
+            if (!hits[moduleName]) hits[moduleName] = [];
+            hits[moduleName].push({
+              //TODO add reference
+              severity: "WARNING",
+              message: "Package includes OS scripts - you should verify them",
+              id: "has-os-scripts",
+            });
+            const duration = performance.now() - start;
+            if (duration > 60000)
+              console.warn(`<B> scan for ${uri.fsPath} took ${duration}ms`);
+          };
         })
       );
     });
@@ -302,68 +314,77 @@ async function analyzePackage(dir) {
     .findFiles(
       path.join("node_modules", "**", "package.json").replaceAll("\\", "/")
     )
-    .then(async (fileset) => {
-      console.log("C len", fileset.length);
+    .then((fileset) => {
       promiseArr.push(
-        ...fileset.map((uri) => async () => {
-          const moduleName = uri.fsPath.match(
-            new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
-          )[1];
-          if (!hits[moduleName]) hits[moduleName] = [];
+        ...fileset.map((uri) => {
+          return async () => {
+            const start = performance.now();
+            const moduleName = uri.fsPath.match(
+              new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
+            )[1];
+            if (!hits[moduleName]) hits[moduleName] = [];
 
-          const dat = JSON.parse(fs.readFileSync(uri.fsPath, "utf8"));
+            const dat = JSON.parse(fs.readFileSync(uri.fsPath, "utf8"));
 
-          //TODO: Remove line numbers, and range since they are completely wrong
-          const datChecks = [];
-          if (dat["main"]) {
-            datChecks.push(
-              regexRuleSetsScanText(
-                Global.dependencyRegexRuleSets["manifest.main"],
-                JSON.stringify(dat["main"])
-              )
-            );
-          }
-          if (dat["scripts"]) {
-            datChecks.push(
-              regexRuleSetsScanText(
-                Global.dependencyRegexRuleSets["manifest.scripts"],
-                JSON.stringify(dat["scripts"])
-              )
-            );
-          }
+            //TODO: Remove line numbers, and range since they are completely wrong
+            const datChecks = [];
+            if (dat["main"]) {
+              datChecks.push(
+                regexRuleSetsScanText(
+                  Global.dependencyRegexRuleSets["manifest.main"],
+                  JSON.stringify(dat["main"])
+                )
+              );
+            }
+            if (dat["scripts"]) {
+              datChecks.push(
+                regexRuleSetsScanText(
+                  Global.dependencyRegexRuleSets["manifest.scripts"],
+                  JSON.stringify(dat["scripts"])
+                )
+              );
+            }
 
-          //Taken from https://github.com/mbalabash/sdc-check
-          let hasNoSourceCodeRefInHomepage =
-            typeof dat.homepage !== "string" ||
-            (!dat.homepage.includes("github") &&
-              !dat.homepage.includes("gitlab"));
-          let hasNoSourceCodeRefInRepository =
-            typeof dat.repository !== "object" ||
-            typeof dat.repository.url !== "string" ||
-            (!dat.repository.url.includes("github") &&
-              !dat.repository.url.includes("gitlab"));
-          if (hasNoSourceCodeRefInHomepage && hasNoSourceCodeRefInRepository) {
-            hits[moduleName].push({
-              //TODO add reference
-              severity: "WARNING",
-              message: "No source code repository found for package",
-              id: "no-source-code-repository",
-            });
-          }
+            //Taken from https://github.com/mbalabash/sdc-check
+            let hasNoSourceCodeRefInHomepage =
+              typeof dat.homepage !== "string" ||
+              (!dat.homepage.includes("github") &&
+                !dat.homepage.includes("gitlab"));
+            let hasNoSourceCodeRefInRepository =
+              typeof dat.repository !== "object" ||
+              typeof dat.repository.url !== "string" ||
+              (!dat.repository.url.includes("github") &&
+                !dat.repository.url.includes("gitlab"));
+            if (
+              hasNoSourceCodeRefInHomepage &&
+              hasNoSourceCodeRefInRepository
+            ) {
+              hits[moduleName].push({
+                //TODO add reference
+                severity: "WARNING",
+                message: "No source code repository found for package",
+                id: "no-source-code-repository",
+              });
+            }
 
-          const res = await Promise.all(datChecks);
-          hits[moduleName].push(...res);
+            const res = await Promise.all(datChecks);
+            hits[moduleName].push(...res);
 
-          // await npmRegistryCheck(moduleName, uri.fsPath).then(
-          //   (resolve) => hits[moduleName].push(...resolve),
-          //   (reject) =>
-          //     console.warn(
-          //       "Unable to perform npm registry check on module",
-          //       moduleName,
-          //       "due to",
-          //       reject
-          //     )
-          // );
+            const duration = performance.now() - start;
+            if (duration > 60000)
+              console.warn(`<C> scan for ${uri.fsPath} took ${duration}ms`);
+
+            // await npmRegistryCheck(moduleName, uri.fsPath).then(
+            //   (resolve) => hits[moduleName].push(...resolve),
+            //   (reject) =>
+            //     console.warn(
+            //       "Unable to perform npm registry check on module",
+            //       moduleName,
+            //       "due to",
+            //       reject
+            //     )
+            // );
+          };
         })
       );
     });
@@ -371,7 +392,7 @@ async function analyzePackage(dir) {
   await Promise.all([checkA, checkB, checkC]);
   console.log("Starting Pool", promiseArr);
   console.time("pp");
-  promisePool.start().then(
+  await promisePool.start().then(
     () => {
       console.log("Done");
       console.timeEnd("pp");
