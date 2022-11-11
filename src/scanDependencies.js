@@ -4,8 +4,8 @@ const { SEVERITY } = require("./diagnostics");
 const { toKebabCase } = require("./utils");
 const { analyzePackage } = require("./scanner");
 
-async function scanDependencies(file) {
-  // const analysis = await analyzePackage();
+async function scanDependencies(file, context) {
+  // const analysis = await analyzePackage(context);
   // console.log("Analyze Package Returned", analysis);
   const analysis = {
     which: [
