@@ -5,6 +5,7 @@ const {
 } = require("./settings");
 const promisify = require("util").promisify;
 const execFile = require("child_process").execFile;
+const Readable = require("stream").Readable;
 const path = require("path");
 const fs = require("graceful-fs");
 const readline = require("readline");
@@ -57,39 +58,44 @@ async function semgrepRuleSetsScan(configs, path, exclude = null) {
 }
 
 //REGEX FUNCTION
-async function regexRuleSetsScanText(ruleSets, text) {
-  //TODO: Find better way
-  return await regexRuleSetsScan(ruleSets, writeToTempFile(text));
-}
-
-async function regexRuleSetsScan(ruleSets, path) {
+async function regexRuleSetsScan(ruleSets, path, text = false) {
   var hits = [];
   const promises = ruleSets.map((ruleSet) => {
-    return regexRuleSetScan(ruleSet, path);
+    return regexRuleSetScan(ruleSet, path, text);
   });
   const results = await Promise.all(promises);
   for (const result of results) hits.push(...result);
   return hits;
 }
 
-async function regexRuleSetScan(ruleSet, path) {
+async function regexRuleSetScan(ruleSet, path, text = false) {
   var hits = [];
   //array of promises to run regex for each rule
   const promises = ruleSet.ruleSet.map((rule) => {
-    return regexRuleScan(rule, path);
+    return regexRuleScan(rule, path, text);
   });
   const results = await Promise.all(promises);
   for (const result of results) hits.push(...result);
   return hits;
 }
 
-async function regexRuleScan(rule, path) {
+async function regexRuleScan(rule, path, text = false) {
   var hits = [];
   var line_no = 0;
+
+  let stream;
+  if (text) {
+    stream = new Readable();
+    stream.push(path);
+    stream.push(null);
+  } else {
+    stream = fs.createReadStream(path);
+  }
   var rd = readline.createInterface({
-    input: fs.createReadStream(path),
+    input: stream,
     console: false,
   });
+
   for await (const line of rd) {
     if (rule.regex instanceof RegExp) {
       //Can provide start and end indices since this is a simple regex rule (not a regex tree)
@@ -330,17 +336,19 @@ async function analyzePackage(dir) {
             const datChecks = [];
             if (dat["main"]) {
               datChecks.push(
-                regexRuleSetsScanText(
+                regexRuleSetsScan(
                   Global.dependencyRegexRuleSets["manifest.main"],
-                  JSON.stringify(dat["main"])
+                  JSON.stringify(dat["main"]),
+                  true
                 )
               );
             }
             if (dat["scripts"]) {
               datChecks.push(
-                regexRuleSetsScanText(
+                regexRuleSetsScan(
                   Global.dependencyRegexRuleSets["manifest.scripts"],
-                  JSON.stringify(dat["scripts"])
+                  JSON.stringify(dat["scripts"]),
+                  true
                 )
               );
             }
