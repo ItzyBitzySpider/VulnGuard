@@ -63,12 +63,4 @@ rules:
     severity: WARNING
     case_sensitive: false
     reference: "https://www.npmjs.com/advisories/813"
-    regex: '(require\('js-yaml'\)\.load\(|yaml\.load\()'
-
-
-
-
-
-
-
-  
+    regex: '(require(''js-yaml'').load\(|yaml.load\()'

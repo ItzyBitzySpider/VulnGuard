@@ -24,12 +24,8 @@ rules:
     case_sensitive: false
     regex: 'handlebars\.SafeString\('
 
-  -id: insecure-redirect
+  - id: insecure-redirect
     message: 'Redirect is insecure and can lead to open redirect'
     severity: WARNING
     case_sensitive: false
     regex: 'res\.redirect\('
-
-
-
-  
