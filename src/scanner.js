@@ -2,6 +2,8 @@ const {
   getDisabledRules,
   setDisabledRules,
   getUserRulesets,
+  getCachedPackageHits,
+  setCachedPackageHits
 } = require("./settings");
 const promisify = require("util").promisify;
 const execFile = require("child_process").execFile;
@@ -138,7 +140,7 @@ async function regexRuleScan(rule, path, text = false) {
 
 function applyRegexCheck(node, parent_type, text) {
   //Assumes tree is valid
-  var res;
+  let res;
   if (parent_type === "regex" || parent_type === "regex_and") {
     res = true; //Neutral element of AND is 1
     for (const field of node) {
@@ -237,8 +239,10 @@ function npmRegistryCheck(packageName, filePath) {
   });
 }
 
-async function analyzePackage() {
-  let hits = {};
+async function analyzePackage(context) {
+  let cached = getCachedPackageHits(context),
+    cacheHits = [],
+    hits = {};
 
   function extListToSearch(input) {
     return (
@@ -284,6 +288,10 @@ async function analyzePackage() {
             const moduleName = uri.fsPath.match(
               new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
             )[1];
+            if (cached[moduleName]) { //Skip since cached, TODO: module version???
+              cacheHits.push(moduleName);
+              continue;
+            }
             if (!hits[moduleName]) hits[moduleName] = [];
             const res = await regexRuleSetsScan(
               Global.dependencyRegexRuleSets["check"],
@@ -308,6 +316,10 @@ async function analyzePackage() {
             const moduleName = uri.fsPath.match(
               new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
             )[1];
+            if (cached[moduleName]) { //Skip since cached, TODO: module version???
+              cacheHits.push(moduleName);
+              continue;
+            }
             if (!hits[moduleName]) hits[moduleName] = [];
             hits[moduleName].push({
               //TODO add reference
@@ -336,6 +348,10 @@ async function analyzePackage() {
               const moduleName = uri.fsPath.match(
                 new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
               )[1];
+              if (cached[moduleName]) { //Skip since cached, TODO: module version???
+                cacheHits.push(moduleName);
+                continue;
+              }
               if (!hits[moduleName]) hits[moduleName] = [];
 
               const dat = JSON.parse(fs.readFileSync(uri.fsPath, "utf8"));
@@ -416,7 +432,7 @@ async function analyzePackage() {
     console.timeEnd("Dependency Scan Time");
   });
 
-  // var modulePaths = getTopLevelDirectories(path.join(dir, "node_modules"));
+  // const modulePaths = getTopLevelDirectories(path.join(dir, "node_modules"));
   // for (const modulePath of modulePaths) {
   //   console.log("Module", modulePath);
   //   if (!hits[modulePath]) hits[modulePath] = [];
@@ -436,6 +452,18 @@ async function analyzePackage() {
   //     console.warn(e.message);
   //   }
   // }
+
+  //All modules currently stored in hits are not cached, and have yet to be cached
+  const propertyNames = Object.getOwnPropertyNames(hits);
+  for (const propertyName of propertyNames) {
+    cached[propertyName] = hits[propertyName];
+  }
+  setCachedPackageHits(context, cached);
+
+  //All modules currently stored in cacheHits are currently used, but have yet to be included into hits
+  for (const cacheHit of cacheHits) {
+    hits[cacheHit] = cached[cacheHit];
+  }
 
   return hits;
 }
@@ -461,7 +489,7 @@ function getFilesRecursively(top_dir) {
     console.warn("Directory not found: " + top_dir);
     return [];
   }
-  var files = [];
+  let files = [];
   function explore(dir) {
     fs.readdirSync(dir).forEach((file) => {
       const absolute = path.join(dir, file);
@@ -476,7 +504,7 @@ function getFilesRecursively(top_dir) {
 
 function getPathType(path) {
   try {
-    var stat = fs.lstatSync(path);
+    const stat = fs.lstatSync(path);
     if (stat.isDirectory()) {
       return 1; //Directory
     } else {
@@ -531,7 +559,7 @@ function validateRegexTree(node, case_sensitive) {
 function loadRegexRuleSet(path) {
   //Wrap around function _loadRegexRuleSet() to catch exceptions thrown
   try {
-    var tmp = _loadRegexRuleSet(path);
+    const tmp = _loadRegexRuleSet(path);
     Global.regexRuleSets.push(tmp);
     Global.enabledRegexRuleSets.push(tmp);
   } catch (error) {
@@ -545,12 +573,12 @@ function loadRegexRuleSet(path) {
 }
 
 function _loadRegexRuleSet(path) {
-  var regexRules = [];
+  let regexRules = [];
   const cfg = fs.readFileSync(path, "utf8");
   const dat = yaml.parse(cfg);
   for (const rule of dat.rules) {
     const propertyNames = Object.getOwnPropertyNames(rule);
-    var f_id = false,
+    let f_id = false,
       f_message = false,
       f_severity = false,
       f_regex = false,
@@ -656,7 +684,7 @@ function _loadRegexRuleSet(path) {
 }
 
 function loadRegexRuleSets(dir) {
-  var files = getFilesRecursively(dir);
+  const files = getFilesRecursively(dir);
   for (const file of files) {
     loadRegexRuleSet(file);
   }
@@ -669,7 +697,7 @@ function loadSemgrepRuleSet(path) {
 }
 
 function loadSemgrepRuleSets(dir) {
-  var files = getFilesRecursively(dir);
+  const files = getFilesRecursively(dir);
   for (const file of files) {
     loadSemgrepRuleSet(file);
   }
@@ -692,10 +720,10 @@ function validRuleSet(path) {
 //Initialize and abstract away backend for frontend
 function initScanner(context) {
   //Load disabled.json into memory
-  var disabled = getDisabledRules(context);
+  const disabled = getDisabledRules(context);
 
   //Load all user-created RuleSets into memory
-  var userRulesets = getUserRulesets(context);
+  const userRulesets = getUserRulesets(context);
 
   //Load all Regex RuleSets into memory
   loadRegexRuleSets(path.join(context.extensionPath, "files", "regex_rules"));
@@ -754,7 +782,7 @@ function initScanner(context) {
     }
   }
 
-  var cleanedDisabled = [];
+  let cleanedDisabled = [];
   for (const disabledRuleSet of disabled) {
     //Process disabled.json
     const validity = validRuleSet(disabledRuleSet);
@@ -787,7 +815,7 @@ function initScanner(context) {
 }
 
 function disableRuleSet(context, path) {
-  var disabled = getDisabledRules(context); //Load disabled.json into memory
+  let disabled = getDisabledRules(context); //Load disabled.json into memory
   if (disabled.includes(path)) {
     vscode.window.showErrorMessage(
       "Unable to disable RuleSet " + path + " since it was already disabled"
@@ -822,7 +850,7 @@ function disableRuleSet(context, path) {
 }
 
 function enableRuleSet(context, path) {
-  var disabled = getDisabledRules(context); //Load disabled.json into memory
+  let disabled = getDisabledRules(context); //Load disabled.json into memory
   if (!disabled.includes(path)) {
     vscode.window.showErrorMessage(
       "Unable to enable RuleSet " + path + " since it was already enabled"
@@ -888,7 +916,7 @@ function initDependencyScanner(context) {
   function loadDependencyRegexRuleSet(path, dependencyType) {
     //Wrap around function _loadRegexRuleSet() to catch exceptions thrown
     try {
-      var tmp = _loadRegexRuleSet(path);
+      const tmp = _loadRegexRuleSet(path);
       if (!Global.dependencyRegexRuleSets[dependencyType])
         Global.dependencyRegexRuleSets[dependencyType] = [];
       Global.dependencyRegexRuleSets[dependencyType].push(tmp);
@@ -905,7 +933,7 @@ function initDependencyScanner(context) {
   }
 
   function loadDependencyRegexRuleSets(dir, dependencyType) {
-    var files = getFilesRecursively(dir);
+    const files = getFilesRecursively(dir);
     for (const file of files) {
       loadDependencyRegexRuleSet(file, dependencyType);
     }
