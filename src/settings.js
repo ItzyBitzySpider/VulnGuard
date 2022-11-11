@@ -47,14 +47,12 @@ function setFeature(context, feature, enabled) {
       require("./scanTrigger")
         .scanWorkspace(context, "**/package.json", ["dependency"])
         .then(() => {
-          console.log("Updating", require("./globals").unsafePackages);
           require("./webview").updateWebview(context);
         });
     else {
       vscode.workspace.findFiles("package.json", null, 1).then((x) => {
         require("./globals").unsafePackages = -1;
         require("./globals").vulnDiagnostics.set(x[0], []);
-        console.log("Updating", require("./globals").unsafePackages);
         require("./webview").updateWebview(context);
       });
     }
