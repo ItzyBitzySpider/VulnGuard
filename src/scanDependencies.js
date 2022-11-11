@@ -5,26 +5,7 @@ const { toKebabCase } = require("./utils");
 const { analyzePackage } = require("./scanner");
 
 async function scanDependencies(file, context) {
-  // const analysis = await analyzePackage(context);
-  // console.log("Analyze Package Returned", analysis);
-  const analysis = {
-    which: [
-      {
-        severity: "WARNING",
-        range: { start: 15, end: 20 },
-        message: "Child process creation",
-        reference: "https://news.ycombinator.com/item?id=17283394",
-        id: "child-process",
-      },
-      {
-        severity: "WARNING",
-        range: { start: 15, end: 20 },
-        message: "Child process creation",
-        reference: "https://news.ycombinator.com/item?id=17283394",
-        id: "child-process",
-      },
-    ],
-  };
+  const analysis = await analyzePackage(context);
 
   //Delete duplicate IDs
   const packageMap = new Map();
@@ -52,7 +33,7 @@ async function scanDependencies(file, context) {
       diagnostics.push({
         severity: SEVERITY[vuln.severity],
         range: range,
-        message: vuln.message,
+        message: `Unsafe package "${packageName}" - ` + vuln.message,
         source: "VulnGuard",
         code: {
           value: toKebabCase(id),
