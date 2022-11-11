@@ -40,14 +40,14 @@ rules:
     case_sensitive: false
     regex_or:
       - regex: 'pseudoRandomBytes'
-      - regex: '\\brand\\('
-      - regex: 'random_shuffle\\('
-      - regex: '\\bshuffle\\('
+      - regex: '\brand\('
+      - regex: 'random_shuffle\('
+      - regex: '\bshuffle\('
       - regex: 'RAND_MAX'
       - regex: '\\brand\\(\\s*\\)\\s*%'
       - regex: 'mwc1616'
       - regex: 'System.Random'
-      - regex: '\\bRandom\\('
+      - regex: '\bRandom\('
       - regex: 'arc4random'
       - regex: 'DUAL_EC_DRBG'
       - regex: '(32969|18273)'
@@ -57,7 +57,7 @@ rules:
     severity: WARNING
     case_sensitive: false
     regex_or:
-      - regex: '\\bsrand\\(\\s*time\\('
+      - regex: '\bsrand\(\s*time\('
       - regex: '\\bsrand\\(\\s*\\d+\\s*\\)'
 
   - id: src-implementation-weak-hash-func
@@ -67,9 +67,3 @@ rules:
     regex_or:
       - regex: '242070db|02441453|db702024|53144402|3572445317' #MD5
       - regex: '98BADCFE|FEDCBC98|C3D2E1F0|F0E1D2C3' #SHA-1
-
-  - id: weak-cipher-mode
-    message: 'Weak cipher mode detected. Consider using CBC, CTR, or GCM.'
-    severity: WARNING
-    case_sensitive: false
-    regex: '(ECB|OFB|CFB|CTS|PCBC|GMAC|XCBC|IACBC|IAPM|EAX|OCB|CWC|AEAD|LRW|XEX|XTS|CMC|EME|CBCMAC|OMAC|PMAC)'
