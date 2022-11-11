@@ -1,0 +1,19 @@
+rules:
+#taken from https://github.com/NodeSecure/js-x-ray
+  - id: hexadecimal-sequence
+    message: 'Hexadecimal sequence detected, please manually verify'
+    severity: INFO
+    case_sensitive: false
+    regex: '\x[a-fA-F0-9]{2}'
+  
+  - id: unicode-sequence
+    message: 'Unicode sequence detected, please manually verify'
+    severity: INFO
+    case_sensitive: false
+    regex: '\u[a-fA-F0-9]{4}}'
+
+  - id: base64-sequence
+    message: 'Base64 sequence detected, please manually verify'
+    severity: INFO
+    case_sensitive: false
+    regex: '^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$'
