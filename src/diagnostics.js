@@ -72,7 +72,7 @@ function isRuleDisabled(document, vuln) {
  * @param {vscode.TextDocument} document
  */
 function handleActiveEditorTextChange(document) {
-  updateDiagnostics(document.uri.fsPath);
+  updateDiagnostics([document.uri.fsPath]);
 }
 
 module.exports = {
