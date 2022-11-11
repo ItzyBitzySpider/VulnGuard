@@ -17,6 +17,7 @@ const Global = require("./globals");
 const vscode = require("vscode");
 const https = require("https");
 const PromisePool = require("es6-promise-pool");
+const lockfile = require('@yarnpkg/lockfile');
 
 //SEMGREP FUNCTION
 //TODO: Add interrupt functionality
@@ -239,8 +240,17 @@ function npmRegistryCheck(packageName, filePath) {
   });
 }
 
+function loadYarnLock() { //TODO: Test if this works
+  let yarnLockPath;
+  const lookup = vscode.workspace.findFiles("yarn.lock").then((fileset) => {
+    yarkLockPath = fileset[0].path;
+  });
+  return lockfile.parse(fs.readFileSync(yarnLockPath, "utf8")).object;
+}
+
 async function analyzePackage(context) {
-  let cached = getCachedPackageHits(context),
+  let yarnLock = loadYarnLock(),
+    cached = getCachedPackageHits(context),
     cacheHits = {},
     hits = {};
 
@@ -288,16 +298,17 @@ async function analyzePackage(context) {
             const moduleName = uri.fsPath.match(
               new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
             )[1];
-            if (cached[moduleName]) { //Skip since cached, TODO: module version???
-              cacheHits[moduleName] = true;
+            const moduleHash = moduleName + "_" + yarnLock[moduleName].version;
+            if (cached[moduleHash]) { //Skip since cached
+              cacheHits[moduleHash] = true;
               return;
             }
-            if (!hits[moduleName]) hits[moduleName] = [];
+            if (!hits[moduleHash]) hits[moduleHash] = [];
             const res = await regexRuleSetsScan(
               Global.dependencyRegexRuleSets["check"],
               uri.fsPath
             );
-            if (res.length) hits[moduleName].push(...res);
+            if (res.length) hits[moduleHash].push(...res);
             const duration = performance.now() - start;
             if (duration > 30000)
               console.warn(`<A> scan for ${uri.fsPath} took ${duration}ms`);
@@ -316,12 +327,13 @@ async function analyzePackage(context) {
             const moduleName = uri.fsPath.match(
               new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
             )[1];
-            if (cached[moduleName]) { //Skip since cached, TODO: module version???
-              cacheHits[moduleName] = true;
+            const moduleHash = moduleName + "_" + yarnLock[moduleName].version;
+            if (cached[moduleHash]) { //Skip since cached
+              cacheHits[moduleHash] = true;
               return;
             }
-            if (!hits[moduleName]) hits[moduleName] = [];
-            hits[moduleName].push({
+            if (!hits[moduleHash]) hits[moduleHash] = [];
+            hits[moduleHash].push({
               //TODO add reference
               severity: "WARNING",
               message: "Package includes OS scripts - you should verify them",
@@ -348,11 +360,12 @@ async function analyzePackage(context) {
               const moduleName = uri.fsPath.match(
                 new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
               )[1];
-              if (cached[moduleName]) { //Skip since cached, TODO: module version???
-                cacheHits[moduleName] = true;
+              const moduleHash = moduleName + "_" + yarnLock[moduleName].version;
+              if (cached[moduleHash]) { //Skip since cached
+                cacheHits[moduleHash] = true;
                 return;
               }
-              if (!hits[moduleName]) hits[moduleName] = [];
+              if (!hits[moduleHash]) hits[moduleHash] = [];
 
               const dat = JSON.parse(fs.readFileSync(uri.fsPath, "utf8"));
 
@@ -391,7 +404,7 @@ async function analyzePackage(context) {
                 hasNoSourceCodeRefInHomepage &&
                 hasNoSourceCodeRefInRepository
               ) {
-                hits[moduleName].push({
+                hits[moduleHash].push({
                   //TODO add reference
                   severity: "WARNING",
                   message: "No source code repository found for package",
@@ -401,7 +414,7 @@ async function analyzePackage(context) {
 
               const res = await Promise.all(datChecks);
               res.forEach((r) => {
-                if (r.length) hits[moduleName].push(...r);
+                if (r.length) hits[moduleHash].push(...r);
               });
 
               const duration = performance.now() - start;
@@ -412,7 +425,7 @@ async function analyzePackage(context) {
             }
 
             // await npmRegistryCheck(moduleName, uri.fsPath).then(
-            //   (resolve) => hits[moduleName].push(...resolve),
+            //   (resolve) => hits[moduleHash].push(...resolve),
             //   (reject) =>
             //     console.warn(
             //       "Unable to perform npm registry check on module",
@@ -454,14 +467,14 @@ async function analyzePackage(context) {
   // }
 
   //All modules currently stored in hits are not cached, and have yet to be cached
-  for (const moduleName of Object.getOwnPropertyNames(hits)) {
-    cached[moduleName] = hits[moduleName];
+  for (const moduleHash of Object.getOwnPropertyNames(hits)) {
+    cached[moduleHash] = hits[moduleHash];
   }
   setCachedPackageHits(context, cached);
 
   //All modules currently stored in cacheHits are currently used, but have yet to be included into hits
-  for (const moduleName of Object.getOwnPropertyNames(cacheHits)) {
-    hits[moduleName] = cached[moduleName];
+  for (const moduleHash of Object.getOwnPropertyNames(cacheHits)) {
+    hits[moduleHash] = cached[moduleHash];
   }
 
   return hits;
