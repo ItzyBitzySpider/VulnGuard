@@ -236,13 +236,13 @@ async function analyzePackage(dir) {
     var hits = [];
     const moduleName = path.basename(modulePath);
 
-    //Skip .bin folder
-    if (moduleName === ".bin") continue;
-    
+    //Skip .bin and @ folder
+    if (moduleName === ".bin" || moduleName.startsWith("@")) continue;
+
     //try-catch package manifest checks (package manifest may not exist in all packages)
     try {
       const manifest = fs.readFileSync(
-        path.join(modulePath, "package.json"),
+        path.join(dir, "node_modules", modulePath, "package.json"),
         "utf8"
       );
       const dat = JSON.parse(manifest);
@@ -285,7 +285,7 @@ async function analyzePackage(dir) {
 
       await npmRegistryCheck(
         moduleName,
-        path.join(modulePath, "package.json")
+        path.join(dir, "node_modules", modulePath, "package.json")
       ).then(
         (resolve) => hits.concat(resolve),
         (reject) =>
@@ -296,11 +296,14 @@ async function analyzePackage(dir) {
             reject
           )
       );
-    } catch {
-      console.error("No package.JSON found/Something went wrong. Skipping package manifest checks.");
+    } catch (e) {
+      console.warn(
+        "No package.json found/Something went wrong. Skipping package manifest checks."
+      );
+      console.warn(e.message);
     }
 
-    var files = getFilesRecursively(modulePath);
+    var files = getFilesRecursively(path.join(dir, "node_modules", modulePath));
     for (const file of files) {
       const ext = path.extname(file);
       if (
