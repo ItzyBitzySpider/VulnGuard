@@ -364,8 +364,10 @@ function updateWebview(context) {
             ""
           )}
         </div>
-    </div>
+    </div>    
+    <div class="column">
       ${featureList.reduce((prev, curr) => prev + getFeatureEntries(curr), "")}
+      </div>
     </div>
   </body>
 </html>
