@@ -23,6 +23,8 @@ Other rules include:
 Users can add their own custom rules, or define new rules to be used as part of semgrep/regex scanning. This configuration is persisted through shutdown and restarts of VSCode.
 
 ### Dependency Checking
+Supply chain attacks --> Want to ensure dependecies and modules imported are safe and not malicious. Given the inherent trust given to npm packages with no vulnerability scanning, it is important to check modules/packages. 
+
 
 When packages are installed/added, package.JSON is naturally modified in the process of installing/adding packages. VulnGuard scans all packages in `node_modules/` whenever package.JSON is updated. Should packages be detected as malicious, warnings will be shown on package.JSON to the developer. 
 

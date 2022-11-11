@@ -200,6 +200,7 @@ function npmRegistryCheck(packageName, filePath) {
         const previousVersionDate = new Date(packageInfo.time[previousVersion]);
 
         //Taken from https://github.com/spaceraccoon/npm-scan/
+        //730 Days (about 2 years)
         if (currentVersionDate - previousVersionDate > 63072000000) {
           result = {
             id: "lastUpdated",
@@ -211,6 +212,7 @@ function npmRegistryCheck(packageName, filePath) {
         }
 
         //TODO add reference
+        //182.5 Days (about 6 months)
         if (new Date() - currentVersionDate > 15768000000) {
           result += {
             id: "unmaintained-package",
