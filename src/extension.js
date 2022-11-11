@@ -1,11 +1,13 @@
 const vscode = require("vscode");
 const diagnostics = require("./diagnostics");
-const path = require("path");
 const findSemgrep = require("./findSemgrep");
 const { createWebview, updateWebview } = require("./webview");
 const { Feature, setFeatureContext } = require("./feature");
 const Global = require("./globals");
-const { FixVulnCodeActionProvider } = require("./codeaction");
+const {
+  FixVulnCodeActionProvider,
+  UnsafePackageCodeActionProvider,
+} = require("./codeaction");
 const { setFeature, getFeatures, getUserRulesets } = require("./settings");
 const { scanWorkspace, scanFile } = require("./scanTrigger");
 const { renameVulns, deleteVulns } = require("./utils");
@@ -14,8 +16,8 @@ const {
   initDependencyScanner,
   regexRuleSetsScan,
   semgrepRuleSetsScan,
-  analyzePackage,
 } = require("./scanner");
+const scanDependencies = require("./scanDependencies");
 
 //TODO file opened state independent diagnostics
 
@@ -64,10 +66,7 @@ async function activate(context) {
     new Feature(
       "dependency",
       "Unsecure Dependencies",
-      async (file) => {
-        const x = await analyzePackage(context);
-        console.log(x);
-      },
+      (file) => scanDependencies(file, context),
       () => ({
         enabled: Global.dependencyRegexRuleSets,
         all: Global.dependencyRegexRuleSets,
@@ -77,20 +76,23 @@ async function activate(context) {
 
   const packageJsonWatcher =
     vscode.workspace.createFileSystemWatcher("**/package.json");
+  const packageCodeActions = vscode.languages.registerCodeActionsProvider(
+    { language: "json", pattern: "**/package.json" },
+    new UnsafePackageCodeActionProvider()
+  );
+
   const watcher = vscode.workspace.createFileSystemWatcher("**/*.js");
   const vulnCodeActions = vscode.languages.registerCodeActionsProvider(
     { language: "javascript", scheme: "file" },
     new FixVulnCodeActionProvider()
   );
 
-  Promise.all([
-    scanWorkspace(context, "**/*.js"),
-    scanWorkspace(context, "**/package.json", ["dependency"]),
-  ]).then(() => {
+  scanWorkspace(context, "**/*.js").then(() => {
     diagnostics.updateDiagnostics();
     createWebview(context);
   });
 
+  scanWorkspace(context, "**/package.json", ["dependency"]);
   //onCreate
   watcher.onDidCreate(
     (uri) => {
@@ -193,7 +195,8 @@ async function activate(context) {
       vscode.env.openExternal(uri)
     ),
     Global.vulnDiagnostics,
-    vulnCodeActions
+    vulnCodeActions,
+    packageCodeActions
   );
 }
 

@@ -34,6 +34,8 @@ var enabledRegexRuleSets = [];
 var enabledSemgrepRuleSets = [];
 var semgrepServer = undefined;
 
+var unsafePackages = 0;
+
 var dependencyRegexRuleSets = {}; //Object of arrays
 
 var vulnDiagnostics = vscode.languages.createDiagnosticCollection("vulns");
@@ -51,4 +53,5 @@ module.exports = {
   vulns,
   dependencyRegexRuleSets,
   NON_STANDARD_SCAN_FEATURES,
+  unsafePackages,
 };
