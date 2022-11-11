@@ -37,19 +37,17 @@ async function activate(context) {
 
   getUserRulesets(context);
   const featureList = Global.getFeatureList();
-  if (Global.semgrepServer) {
-    featureList.push(
-      new Feature(
-        "semgrep",
-        "SemGrep",
-        (file) => semgrepRuleSetsScan(Global.enabledSemgrepRuleSets, file),
-        () => ({
-          enabled: Global.enabledSemgrepRuleSets,
-          all: Global.semgrepRuleSets,
-        })
-      )
-    );
-  }
+  featureList.push(
+    new Feature(
+      "semgrep",
+      "SemGrep",
+      (file) => semgrepRuleSetsScan(Global.enabledSemgrepRuleSets, file),
+      () => ({
+        enabled: Global.enabledSemgrepRuleSets,
+        all: Global.semgrepRuleSets,
+      })
+    )
+  );
   featureList.push(
     new Feature(
       "regex",
