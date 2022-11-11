@@ -6,7 +6,7 @@ const {
 const promisify = require("util").promisify;
 const execFile = require("child_process").execFile;
 const path = require("path");
-const fs = require("fs");
+const fs = require("graceful-fs");
 const readline = require("readline");
 const yaml = require("yaml");
 const execFileAsync = promisify(execFile);
@@ -15,6 +15,7 @@ const vscode = require("vscode");
 const crypto = require("crypto");
 const https = require("https");
 const os = require("os");
+const PromisePool = require("es6-promise-pool");
 
 //SEMGREP FUNCTION
 //TODO: Add interrupt functionality
@@ -238,7 +239,16 @@ async function analyzePackage(dir) {
     );
   }
 
-  vscode.workspace
+  const MAX_THREAD = 900;
+  const promiseArr = [];
+  const promisePool = new PromisePool(() => {
+    if (!promiseArr.length) return null;
+    const f = promiseArr.splice(-1)[0]();
+    console.log(promiseArr.length);
+    return f;
+  }, MAX_THREAD);
+
+  const checkA = vscode.workspace
     .findFiles(
       extListToSearch([
         ".coffee",
@@ -252,120 +262,145 @@ async function analyzePackage(dir) {
       "**/*.d.ts"
     )
     .then(async (fileset) => {
-      for (const uri of fileset) {
-        const moduleName = uri.fsPath.match(
-          new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
-        )[1];
-        if (!hits[moduleName]) hits[moduleName] = [];
-        hits[moduleName].push(
-          await regexRuleSetsScan(
+      console.log("A len", fileset.length);
+      promiseArr.push(
+        ...fileset.map((uri) => async () => {
+          const moduleName = uri.fsPath.match(
+            new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
+          )[1];
+          if (!hits[moduleName]) hits[moduleName] = [];
+          const res = await regexRuleSetsScan(
             Global.dependencyRegexRuleSets["check"],
             uri.fsPath
-          )
-        );
-      }
-      console.log("DONE---DONE----------------------");
+          );
+          hits[moduleName].push(res);
+        })
+      );
     });
 
-  vscode.workspace
+  const checkB = vscode.workspace
     .findFiles(extListToSearch([".sh", ".bash", ".bat", ".cmd"]))
-    .then((fileset) => {
-      for (const uri of fileset) {
-        const moduleName = uri.fsPath.match(
-          new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
-        )[1];
-        if (!hits[moduleName]) hits[moduleName] = [];
-        hits[moduleName].push({
-          //TODO add reference
-          severity: "WARNING",
-          message: "Package includes OS scripts - you should verify them",
-          id: "has-os-scripts",
-        });
-      }
-      console.log("DONE-------------------------");
+    .then(async (fileset) => {
+      console.log("B len", fileset.length);
+      promiseArr.push(
+        ...fileset.map((uri) => async () => {
+          const moduleName = uri.fsPath.match(
+            new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
+          )[1];
+          if (!hits[moduleName]) hits[moduleName] = [];
+          hits[moduleName].push({
+            //TODO add reference
+            severity: "WARNING",
+            message: "Package includes OS scripts - you should verify them",
+            id: "has-os-scripts",
+          });
+        })
+      );
     });
 
-  var modulePaths = getTopLevelDirectories(path.join(dir, "node_modules"));
-  for (const modulePath of modulePaths) {
-    console.log("Module", modulePath);
-    if (!hits[modulePath]) hits[modulePath] = [];
-    console.log("TIME START");
-    console.time(modulePath);
+  const checkC = vscode.workspace
+    .findFiles(
+      path.join("node_modules", "**", "package.json").replaceAll("\\", "/")
+    )
+    .then(async (fileset) => {
+      console.log("C len", fileset.length);
+      promiseArr.push(
+        ...fileset.map((uri) => async () => {
+          const moduleName = uri.fsPath.match(
+            new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
+          )[1];
+          if (!hits[moduleName]) hits[moduleName] = [];
 
-    const moduleName = path.basename(modulePath);
+          const dat = JSON.parse(fs.readFileSync(uri.fsPath, "utf8"));
 
-    //Skip .bin and @ folder
-    if (moduleName === ".bin" || moduleName.startsWith("@")) continue;
+          //TODO: Remove line numbers, and range since they are completely wrong
+          const datChecks = [];
+          if (dat["main"]) {
+            datChecks.push(
+              regexRuleSetsScanText(
+                Global.dependencyRegexRuleSets["manifest.main"],
+                JSON.stringify(dat["main"])
+              )
+            );
+          }
+          if (dat["scripts"]) {
+            datChecks.push(
+              regexRuleSetsScanText(
+                Global.dependencyRegexRuleSets["manifest.scripts"],
+                JSON.stringify(dat["scripts"])
+              )
+            );
+          }
 
-    //try-catch package manifest checks (package manifest may not exist in all packages)
-    try {
-      const manifest = fs.readFileSync(
-        path.join(dir, "node_modules", modulePath, "package.json"),
-        "utf8"
+          //Taken from https://github.com/mbalabash/sdc-check
+          let hasNoSourceCodeRefInHomepage =
+            typeof dat.homepage !== "string" ||
+            (!dat.homepage.includes("github") &&
+              !dat.homepage.includes("gitlab"));
+          let hasNoSourceCodeRefInRepository =
+            typeof dat.repository !== "object" ||
+            typeof dat.repository.url !== "string" ||
+            (!dat.repository.url.includes("github") &&
+              !dat.repository.url.includes("gitlab"));
+          if (hasNoSourceCodeRefInHomepage && hasNoSourceCodeRefInRepository) {
+            hits[moduleName].push({
+              //TODO add reference
+              severity: "WARNING",
+              message: "No source code repository found for package",
+              id: "no-source-code-repository",
+            });
+          }
+
+          const res = await Promise.all(datChecks);
+          hits[moduleName].push(...res);
+
+          // await npmRegistryCheck(moduleName, uri.fsPath).then(
+          //   (resolve) => hits[moduleName].push(...resolve),
+          //   (reject) =>
+          //     console.warn(
+          //       "Unable to perform npm registry check on module",
+          //       moduleName,
+          //       "due to",
+          //       reject
+          //     )
+          // );
+        })
       );
-      const dat = JSON.parse(manifest);
+    });
 
-      //TODO: Remove line numbers, and range since they are completely wrong
-      if (dat["main"]) {
-        hits[modulePath].push(
-          ...(await regexRuleSetsScanText(
-            Global.dependencyRegexRuleSets["manifest.main"],
-            JSON.stringify(dat["main"])
-          ))
-        );
-      }
-      if (dat["scripts"]) {
-        hits[modulePath].push(
-          ...(await regexRuleSetsScanText(
-            Global.dependencyRegexRuleSets["manifest.scripts"],
-            JSON.stringify(dat["scripts"])
-          ))
-        );
-      }
-
-      console.timeLog(modulePath, "A");
-
-      //Taken from https://github.com/mbalabash/sdc-check
-      let hasNoSourceCodeRefInHomepage =
-        typeof dat.homepage !== "string" ||
-        (!dat.homepage.includes("github") && !dat.homepage.includes("gitlab"));
-      let hasNoSourceCodeRefInRepository =
-        typeof dat.repository !== "object" ||
-        typeof dat.repository.url !== "string" ||
-        (!dat.repository.url.includes("github") &&
-          !dat.repository.url.includes("gitlab"));
-      if (hasNoSourceCodeRefInHomepage && hasNoSourceCodeRefInRepository) {
-        hits[modulePath].push({
-          //TODO add reference
-          severity: "WARNING",
-          message: "No source code repository found for package",
-          id: "no-source-code-repository",
-        });
-      }
-
-      console.timeLog(modulePath, "B");
-
-      await npmRegistryCheck(
-        moduleName,
-        path.join(dir, "node_modules", modulePath, "package.json")
-      ).then(
-        (resolve) => hits[modulePath].push(...resolve),
-        (reject) =>
-          console.warn(
-            "Unable to perform npm registry check on module",
-            moduleName,
-            "due to",
-            reject
-          )
-      );
-      console.timeEnd(modulePath);
-    } catch (e) {
-      console.warn(
-        "No package.json found/Something went wrong. Skipping package manifest checks."
-      );
-      console.warn(e.message);
+  await Promise.all([checkA, checkB, checkC]);
+  console.log("Starting Pool", promiseArr);
+  console.time("pp");
+  promisePool.start().then(
+    () => {
+      console.log("Done");
+      console.timeEnd("pp");
+    },
+    (e) => {
+      console.log("Promise rejected: " + e.message);
     }
-  }
+  );
+
+  // var modulePaths = getTopLevelDirectories(path.join(dir, "node_modules"));
+  // for (const modulePath of modulePaths) {
+  //   console.log("Module", modulePath);
+  //   if (!hits[modulePath]) hits[modulePath] = [];
+  //   console.log("TIME START");
+
+  //   const moduleName = path.basename(modulePath);
+
+  //   //Skip .bin and @ folder
+  //   if (moduleName === ".bin" || moduleName.startsWith("@")) continue;
+
+  //   //try-catch package manifest checks (package manifest may not exist in all packages)
+  //   try {
+  //   } catch (e) {
+  //     console.warn(
+  //       "No package.json found/Something went wrong. Skipping package manifest checks."
+  //     );
+  //     console.warn(e.message);
+  //   }
+  // }
 
   return hits;
 }
