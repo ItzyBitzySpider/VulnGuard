@@ -205,7 +205,7 @@ function deleteUserRuleset(context, feature, path) {
 
 let cachedPackageHits = undefined;
 function getCachedPackageHitsPath(context) {
-  const dir = getGlobalPath(context);
+  const dir = getWorkspacePath(context);
   return path.join(dir, "cached_package_hits.json");
 }
 /**
