@@ -293,6 +293,10 @@ function updateWebview(context) {
         <h1>${alert}</h1>
         <h3>Alerts</h3>
       </div>
+      <div class="col count">
+        <h1>${Global.unsafePackages}</h1>
+        <h3>Unsafe Packages</h3>
+      </div>
       <div style="width:50px"></div>
     </div>
     <div class="divider"></div>

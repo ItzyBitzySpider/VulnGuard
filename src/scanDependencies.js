@@ -3,9 +3,29 @@ const Global = require("./globals");
 const { SEVERITY } = require("./diagnostics");
 const { toKebabCase } = require("./utils");
 const { analyzePackage } = require("./scanner");
+const { updateWebview } = require("./webview");
 
 async function scanDependencies(file, context) {
   const analysis = await analyzePackage(context);
+
+  // const analysis = {
+  //   which: [
+  //     {
+  //       severity: "WARNING",
+  //       range: { start: 15, end: 20 },
+  //       message: "Child process creation",
+  //       reference: "https://news.ycombinator.com/item?id=17283394",
+  //       id: "child-process",
+  //     },
+  //     {
+  //       severity: "WARNING",
+  //       range: { start: 15, end: 20 },
+  //       message: "Child process creation",
+  //       reference: "https://news.ycombinator.com/item?id=17283394",
+  //       id: "child-process",
+  //     },
+  //   ],
+  // };
 
   //Delete duplicate IDs
   const packageMap = new Map();
@@ -43,5 +63,7 @@ async function scanDependencies(file, context) {
     });
   });
   Global.vulnDiagnostics.set(uri, diagnostics);
+  Global.unsafePackages = packageMap.size;
+  updateWebview(context);
 }
 module.exports = scanDependencies;
