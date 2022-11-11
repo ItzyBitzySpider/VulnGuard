@@ -236,61 +236,69 @@ async function analyzePackage(dir) {
     var hits = [];
     const moduleName = path.basename(modulePath);
 
-    const manifest = fs.readFileSync(
-      path.join(modulePath, "package.json"),
-      "utf8"
-    );
-    const dat = JSON.parse(manifest);
-
-    //TODO: Remove line numbers, and range since they are completely wrong
-    if (dat["main"]) {
-      hits = hits.concat(
-        await regexRuleSetsScanText(
-          Global.dependencyRegexRuleSets["manifest.main"],
-          JSON.stringify(dat["main"])
-        )
+    //Skip .bin folder
+    if (moduleName === ".bin") continue;
+    
+    //try-catch package manifest checks (package manifest may not exist in all packages)
+    try {
+      const manifest = fs.readFileSync(
+        path.join(modulePath, "package.json"),
+        "utf8"
       );
-    }
-    if (dat["scripts"]) {
-      hits = hits.concat(
-        await regexRuleSetsScanText(
-          Global.dependencyRegexRuleSets["manifest.scripts"],
-          JSON.stringify(dat["scripts"])
-        )
+      const dat = JSON.parse(manifest);
+
+      //TODO: Remove line numbers, and range since they are completely wrong
+      if (dat["main"]) {
+        hits = hits.concat(
+          await regexRuleSetsScanText(
+            Global.dependencyRegexRuleSets["manifest.main"],
+            JSON.stringify(dat["main"])
+          )
+        );
+      }
+      if (dat["scripts"]) {
+        hits = hits.concat(
+          await regexRuleSetsScanText(
+            Global.dependencyRegexRuleSets["manifest.scripts"],
+            JSON.stringify(dat["scripts"])
+          )
+        );
+      }
+
+      //Taken from https://github.com/mbalabash/sdc-check
+      let hasNoSourceCodeRefInHomepage =
+        typeof dat.homepage !== "string" ||
+        (!dat.homepage.includes("github") && !dat.homepage.includes("gitlab"));
+      let hasNoSourceCodeRefInRepository =
+        typeof dat.repository !== "object" ||
+        typeof dat.repository.url !== "string" ||
+        (!dat.repository.url.includes("github") &&
+          !dat.repository.url.includes("gitlab"));
+      if (hasNoSourceCodeRefInHomepage && hasNoSourceCodeRefInRepository) {
+        hits.push({
+          //TODO add reference
+          severity: "WARNING",
+          message: "No source code repository found for package",
+          id: "no-source-code-repository",
+        });
+      }
+
+      await npmRegistryCheck(
+        moduleName,
+        path.join(modulePath, "package.json")
+      ).then(
+        (resolve) => hits.concat(resolve),
+        (reject) =>
+          console.warn(
+            "Unable to perform npm registry check on module",
+            moduleName,
+            "due to",
+            reject
+          )
       );
+    } catch {
+      console.error("No package.JSON found/Something went wrong. Skipping package manifest checks.");
     }
-
-    //Taken from https://github.com/mbalabash/sdc-check
-    let hasNoSourceCodeRefInHomepage =
-      typeof dat.homepage !== "string" ||
-      (!dat.homepage.includes("github") && !dat.homepage.includes("gitlab"));
-    let hasNoSourceCodeRefInRepository =
-      typeof dat.repository !== "object" ||
-      typeof dat.repository.url !== "string" ||
-      (!dat.repository.url.includes("github") &&
-        !dat.repository.url.includes("gitlab"));
-    if (hasNoSourceCodeRefInHomepage && hasNoSourceCodeRefInRepository) {
-      hits.push({
-        //TODO add reference
-        severity: "WARNING",
-        message: "No source code repository found for package",
-        id: "no-source-code-repository",
-      });
-    }
-
-    await npmRegistryCheck(
-      moduleName,
-      path.join(modulePath, "package.json")
-    ).then(
-      (resolve) => hits.concat(resolve),
-      (reject) =>
-        console.warn(
-          "Unable to perform npm registry check on module",
-          moduleName,
-          "due to",
-          reject
-        )
-    );
 
     var files = getFilesRecursively(modulePath);
     for (const file of files) {
