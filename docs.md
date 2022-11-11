@@ -19,6 +19,8 @@ Default regex rules are curated from Microsoft DevSkim
 
 Other rules include:
 
+### User-Defined Rules
+Users can add their own custom rules, or define new rules to be used as part of semgrep/regex scanning. This configuration is persisted through shutdown and restarts of VSCode.
 
 ### Dependency Checking
 
@@ -29,10 +31,10 @@ In addition, new rules will automatically be created to catch any code utilising
 
 Dependency Checking builds upon the work done by SpaceRaccoon in npm-scan and other sdc (simple dependency check). The following documents the various heuristics used to determine if a package is malicious. 
 
-1) No Source Code Repository for Package
-2) Unmaintained Package
-3) Unusually long time between releases for Package
-4) OS Scripts found within packages
+1) No Source Code Repository for Package 
+2) Unmaintained Package (checks against NPM)
+3) Unusually long time between releases for Package (checks against NPM)
+4) OS Scripts (.sh, .bat etc) found within packages
 4) Fetching of CSP (ref SpaceRaccoon)
 5) Creation of Child Proceses
 6) JJEncode Obfuscation in Code
