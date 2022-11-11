@@ -51,24 +51,30 @@ p {
 .entries {
   width: 600px;
   min-height: 8rem;
+  max-height: 16rem;
   background-color: #3f3f46;
   border-radius: 10px;
+  display: flex;
+  flex-direction: column;
 }
-.entries div {
+.entries div.column {
+  overflow-y: scroll;
+}
+.entries div.row {
   height: 2rem;
   padding: 5px 10px;
 }
-.entries div:first-child {
+.entries > div.row:first-child {
   border-radius: 10px 10px 0 0;
   background-color: #71717a;
 }
-.entries div:first-child svg {
+.entries > div.row:first-child svg {
   height: 100%;
   width: 100%;
   fill: #3b3b38;
   pointer-events: none;
 }
-.entries div:first-child button {
+.entries > div.row:first-child button {
   display: block;
 }
 .entries svg {
@@ -85,7 +91,7 @@ p {
   display: none;
   cursor: pointer;
 }
-.entries > div:hover button {
+.entries > div > div.row:hover button {
   display: block;
 }
 .entries .disabled {
