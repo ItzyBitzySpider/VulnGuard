@@ -93,7 +93,7 @@ function addIgnoredRegex(context, regex) {
   ignoredRegex.push(regex);
   vscode.workspace
     .findFiles(regex, `${ignoredRegex.join(",")}}`)
-    .then((uris) => Global.vulns.deleteVulns(uris));
+    .then((uris) => require("./utils").deleteVulns(uris));
 
   const ignoredPath = getIgnoredRegexPath(context);
   fs.writeFile(ignoredPath, ignoredRegex.join("\n"), function (err) {
@@ -205,7 +205,7 @@ function deleteUserRuleset(context, feature, path) {
 
 let cachedPackageHits = undefined;
 function getCachedPackageHitsPath(context) {
-  const dir = getGlobalPath(context);
+  const dir = getWorkspacePath(context);
   return path.join(dir, "cached_package_hits.json");
 }
 /**
