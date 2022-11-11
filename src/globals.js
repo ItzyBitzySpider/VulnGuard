@@ -34,7 +34,7 @@ var enabledRegexRuleSets = [];
 var enabledSemgrepRuleSets = [];
 var semgrepServer = undefined;
 
-var unsafePackages = 0;
+var unsafePackages = -1;
 
 var dependencyRegexRuleSets = {}; //Object of arrays
 

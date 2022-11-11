@@ -1,7 +1,6 @@
 const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
-const Global = require("./globals");
 
 function getGlobalPath(context) {
   const dir = context.globalStorageUri.fsPath;
@@ -43,8 +42,27 @@ function getFeatures(context) {
 function setFeature(context, feature, enabled) {
   features[feature] = enabled;
 
-  if (enabled) require("./scanTrigger").scanWorkspace(context, feature);
-  else require("./utils").deleteVulnsWithFeature(feature);
+  if (feature === "dependency") {
+    if (enabled)
+      require("./scanTrigger")
+        .scanWorkspace(context, "**/package.json", ["dependency"])
+        .then(() => {
+          console.log("Updating", require("./globals").unsafePackages);
+          require("./webview").updateWebview(context);
+        });
+    else {
+      vscode.workspace.findFiles("package.json", null, 1).then((x) => {
+        require("./globals").unsafePackages = -1;
+        require("./globals").vulnDiagnostics.set(x[0], []);
+        console.log("Updating", require("./globals").unsafePackages);
+        require("./webview").updateWebview(context);
+      });
+    }
+  } else {
+    if (enabled)
+      require("./scanTrigger").scanWorkspace(context, "**/*.js", [feature]);
+    else require("./utils").deleteVulnsWithFeature(feature);
+  }
 
   const featuresPath = getFeaturesPath(context);
   fs.writeFile(featuresPath, JSON.stringify(features), function (err) {
@@ -202,7 +220,9 @@ function getCachedPackageHits(context) {
   const cachedPackageHitsPath = getCachedPackageHitsPath(context);
   if (!fs.existsSync(cachedPackageHitsPath))
     fs.writeFileSync(cachedPackageHitsPath, JSON.stringify({}), "utf8");
-  cachedPackageHits = JSON.parse(fs.readFileSync(cachedPackageHitsPath, "utf8"));
+  cachedPackageHits = JSON.parse(
+    fs.readFileSync(cachedPackageHitsPath, "utf8")
+  );
   return cachedPackageHits;
 }
 /**
@@ -235,5 +255,5 @@ module.exports = {
   addUserRuleset,
   deleteUserRuleset,
   getCachedPackageHits,
-  setCachedPackageHits
+  setCachedPackageHits,
 };

@@ -293,10 +293,15 @@ function updateWebview(context) {
         <h1>${alert}</h1>
         <h3>Alerts</h3>
       </div>
-      <div class="col count">
-        <h1>${Global.unsafePackages}</h1>
-        <h3>Unsafe Packages</h3>
-      </div>
+      ${
+        Global.unsafePackages === -1
+          ? ""
+          : `<div class="col count">
+      <h1>${Global.unsafePackages}</h1>
+      <h3>Unsafe Packages</h3>
+    </div>`
+      }
+      
       <div style="width:50px"></div>
     </div>
     <div class="divider"></div>
@@ -319,14 +324,15 @@ function updateWebview(context) {
           <input
             type="checkbox"
             id="${curr.id}__checkbox"
-            checked="${
-              curr.id === "semgrep" && (isWindows || !Global.semgrepServer)
-                ? false
-                : curr.isEnabled()
-            }" 
+            ${
+              (curr.id === "semgrep" && (isWindows || !Global.semgrepServer)) ||
+              !curr.isEnabled()
+                ? ""
+                : "checked"
+            } 
             ${
               curr.id === "semgrep" && (isWindows || !Global.semgrepServer)
-                ? `disabled="true"`
+                ? `disabled`
                 : ""
             }/>
           <span class="checkmark"></span

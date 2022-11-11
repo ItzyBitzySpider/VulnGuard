@@ -45,6 +45,7 @@ p {
 }
 .count h3 {
   margin: 0;
+  white-space: nowrap;
 }
 
 .entries {
