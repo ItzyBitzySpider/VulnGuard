@@ -2,8 +2,10 @@
   "name": "vulnguard",
   "displayName": "VulnGuard",
   "description": "An extension to lint code for security vulnerabilities",
-  "publisher": "ItzyBitzySpider",
   "version": "0.0.1",
+  "publisher": "ItzyBitzySpider",
+  "repository": "github:ItzyBitzySpider/VulnGuard",
+  "license": "GPL-3.0-only",
   "engines": {
     "vscode": "^1.73.0"
   },
@@ -25,7 +27,11 @@
   "scripts": {
     "lint": "eslint .",
     "pretest": "yarn run lint",
-    "test": "node ./test/runTest.js"
+    "test": "node ./test/runTest.js",
+    "vscode:prepublish": "yarn run esbuild-base --minify",
+    "esbuild-base": "esbuild ./src/extension.js --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
+    "esbuild": "yarn run esbuild-base --sourcemap",
+    "esbuild-watch": "yarn run esbuild-base --sourcemap --watch"
   },
   "devDependencies": {
     "@types/glob": "^8.0.0",
@@ -33,6 +39,7 @@
     "@types/node": "16.x",
     "@types/vscode": "^1.73.0",
     "@vscode/test-electron": "^2.2.0",
+    "esbuild": "^0.15.13",
     "eslint": "^8.26.0",
     "glob": "^8.0.3",
     "mocha": "^10.1.0"

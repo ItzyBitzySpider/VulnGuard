@@ -16,7 +16,7 @@ Using VSCode Quick Fix, you can disable VulnGuard or even specific ruleset on a 
 ### Configuration
 You can configure the rulesets and even disable specific checks entirely via the VulnGuard Dashboard.
 
-![VulnGuard Dashboard]()
+![VulnGuard Dashboard](media/vulnguard.png)
 
 ### How It Works
 You can read more about what's under the hood in [docs.md](./docs.md)
