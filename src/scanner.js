@@ -39,6 +39,9 @@ async function semgrepRuleSetsScan(configs, path, exclude = []) {
   const results = await Promise.all(promises);
   for (const result of results) {
     const dat = JSON.parse(result.stdout);
+    if (dat.errors) {
+      console.warn("Semgrep returned error(s):", dat.errors);
+    }
     for (const result of dat.results) {
       hits.push({
         severity: result.extra.severity,
