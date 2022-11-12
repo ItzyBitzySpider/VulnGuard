@@ -296,18 +296,17 @@ async function analyzePackage(context) {
             const moduleName = uri.fsPath.match(
               new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
             )[1];
-            const moduleHash = moduleName;
             /*const moduleHash = moduleName + "_" + yarnLock[moduleName].version;
             if (cached[moduleHash]) { //Skip since cached
               cacheHits[moduleHash] = true;
               return;
             }*/
-            if (!hits[moduleHash]) hits[moduleHash] = [];
+            if (!hits[moduleName]) hits[moduleName] = [];
             const res = await regexRuleSetsScan(
               Global.dependencyRegexRuleSets["check"],
               uri.fsPath
             );
-            if (res.length) hits[moduleHash].push(...res);
+            if (res.length) hits[moduleName].push(...res);
             const duration = performance.now() - start;
             if (duration > 30000)
               console.warn(`<A> scan for ${uri.fsPath} took ${duration}ms`);
@@ -326,14 +325,13 @@ async function analyzePackage(context) {
             const moduleName = uri.fsPath.match(
               new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
             )[1];
-            const moduleHash = moduleName;
             /*const moduleHash = moduleName + "_" + yarnLock[moduleName].version;
             if (cached[moduleHash]) { //Skip since cached
               cacheHits[moduleHash] = true;
               return;
             }*/
-            if (!hits[moduleHash]) hits[moduleHash] = [];
-            hits[moduleHash].push({
+            if (!hits[moduleName]) hits[moduleName] = [];
+            hits[moduleName].push({
               //TODO add reference
               severity: "WARNING",
               message: "Package includes OS scripts - you should verify them",
@@ -360,13 +358,12 @@ async function analyzePackage(context) {
               const moduleName = uri.fsPath.match(
                 new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
               )[1];
-              const moduleHash = moduleName;
               /*const moduleHash = moduleName + "_" + yarnLock[moduleName].version;
               if (cached[moduleHash]) { //Skip since cached
                 cacheHits[moduleHash] = true;
                 return;
               }*/
-              if (!hits[moduleHash]) hits[moduleHash] = [];
+              if (!hits[moduleName]) hits[moduleName] = [];
 
               const dat = JSON.parse(fs.readFileSync(uri.fsPath, "utf8"));
 
@@ -402,7 +399,7 @@ async function analyzePackage(context) {
                     reject
                   )
                 );
-                hits[moduleHash].push(...resolve);
+                hits[moduleName].push(...resolve);
               });
 
               //Taken from https://github.com/mbalabash/sdc-check
@@ -419,7 +416,7 @@ async function analyzePackage(context) {
                 hasNoSourceCodeRefInHomepage &&
                 hasNoSourceCodeRefInRepository
               ) {
-                hits[moduleHash].push({
+                hits[moduleName].push({
                   //TODO add reference
                   severity: "WARNING",
                   message: "No source code repository found for package",
@@ -429,7 +426,7 @@ async function analyzePackage(context) {
 
               const res = await Promise.all(datChecks);
               res.forEach((r) => {
-                if (r.length) hits[moduleHash].push(...r);
+                if (r.length) hits[moduleName].push(...r);
               });
 
               const duration = performance.now() - start;
