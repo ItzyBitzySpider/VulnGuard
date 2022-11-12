@@ -18,6 +18,7 @@ const {
   semgrepRuleSetsScan,
 } = require("./scanner");
 const scanDependencies = require("./scanDependencies");
+const { exit } = require("process");
 
 //TODO file opened state independent diagnostics
 
@@ -25,6 +26,12 @@ const scanDependencies = require("./scanDependencies");
  * @param {vscode.ExtensionContext} context
  */
 async function activate(context) {
+  if (!(await vscode.workspace.findFiles("package.json", null, 1)).length) {
+    console.warn(
+      "VulnGuard shutting down as package.json not found in workspace."
+    );
+    exit(0);
+  }
   console.log("VulnGuard has started and is running!");
 
   await findSemgrep(context);
