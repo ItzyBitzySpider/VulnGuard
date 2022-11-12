@@ -21,7 +21,7 @@ const PromisePool = require("es6-promise-pool");
 
 //SEMGREP FUNCTION
 //TODO: Add interrupt functionality
-async function semgrepRuleSetsScan(configs, path, exclude = null) {
+async function semgrepRuleSetsScan(configs, path, exclude = []) {
   let hits = [];
   //append --exclude-rule to semgrep command for each exclude rule
   if (exclude)
