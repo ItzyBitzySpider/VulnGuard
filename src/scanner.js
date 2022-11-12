@@ -51,9 +51,7 @@ async function semgrepRuleSetsScan(configs, path, exclude = []) {
         },
         message: result.extra.message,
         ...(result.extra.fix && { fix: result.extra.fix }),
-        ...(result.metadata.reference && {
-          reference: result.metadata.reference,
-        }),
+        ...((result.metadata && result.metadata.reference) && { reference: result.metadata.reference }),
         id: result.check_id,
       });
     }
