@@ -52,8 +52,7 @@ VulnGuard aligns itself towards shift-left testing by moving code vulnerability 
 VulnGuard incorporates the best elements of existing scanners and solutions on the market. At present, VulnGuard supports RegEx and [Semgrep](https://semgrep.dev) checking. Semgrep is a "fast, open-source, static analysis tool for finding bugs at editor, commit and CI time". RegEx checks allows developers to add additional rules (on top of the default rulesets) to capture for more security vulnerabilities. In addition, VulnGuard incorporates dependency checking based on heuristics. This builds upon the existing work done by [Spaceracoon](https://github.com/spaceraccoon/). The specific resources can be found under [References](#references).
 
 ## Future Improvements
-
-TO_FILL
+In the future, VulnGuard could leverage AI to suggest recommendations to the developer on how to fix vulnerable code, similar to how [GitHub Copilot](https://github.com/features/copilot) suggests code completion to developers. VulnGuard could also leverage AI or possibly statistics-based heuristics (e.g. file entropy) to detect vulnerable/malicious code.
 
 ## References
 - https://github.com/microsoft/DevSkim

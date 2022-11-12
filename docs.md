@@ -1,7 +1,7 @@
 # Some Documentation
 
 ### Semgrep Scanning
-VulnGuard utilises [Semgrep (Semantic Grep)](https://semgrep.dev/) to perform scanning. Semgrep's [high performance](https://semgrep.dev/docs/faq/#besides-open-source-and-ease-of-writing-new-rules-what-else-is-different-about-semgrep), large userbase, and extensive database of community-curated rules makes it a powerful tool to detect vulnerabilities. Semgrep has multiple scanning modes, allowing for the use of static analysis, dynamic analysis (sinks and taints), and [much more](https://semgrep.dev/docs/writing-rules/experiments/introduction/). VulnGuard comes with various open-source rules enabled by default, but also allows for the users to add/import their own Semgrep rules/repositories.
+VulnGuard utilises [Semgrep (Semantic Grep)](https://semgrep.dev/) to perform scanning. Semgrep's [high performance](https://semgrep.dev/docs/faq/#besides-open-source-and-ease-of-writing-new-rules-what-else-is-different-about-semgrep), large userbase, and [extensive database](https://semgrep.dev/r) of community-curated rules makes it a powerful tool to detect vulnerabilities. Semgrep has multiple scanning modes, allowing for the use of static analysis, dynamic analysis (sinks and taints), and [much more](https://semgrep.dev/docs/writing-rules/experiments/introduction/). VulnGuard comes with various open-source rules enabled by default, but also allows for the users to add/import their own Semgrep rules/repositories.
 
 Semgrep Rules are stored in YAML files, and follow [this format](https://semgrep.dev/docs/writing-rules/rule-syntax/).
 
@@ -112,7 +112,7 @@ While it is important to check modules imported, VulnGuard only scans packages d
 When packages are installed/added, `package.json` is naturally modified in the process of installing/adding packages. VulnGuard scans all dependency packages listed in `package.json` whenever `package.json` is updated, and should packages be detected as malicious, warnings will be shown to the developer when viewing `package.json`.
 
 
-VulnGuard's Dependency Checking builds upon the work done by Spaceraccoon in [npm-scan](https://github.com/spaceraccoon/npm-scan) and other SDC (Simple Dependency Check) tools. The following documents the various heuristics used to determine if a package is malicious:
+VulnGuard's Dependency Checking builds upon the work done by Spaceraccoon in [npm-scan](https://github.com/spaceraccoon/npm-scan) and other SDC (Simple Dependency Check) tools. These tools make use of heuristics in order to determine if a package is likely malicious. Using heuristics is advantageous, since it can be done immediately without the need to wait for the vulnerability to be reported and then published as a [CVE](https://cve.mitre.org/). Unfortunately, this process could take [a month or more](https://www.trustwave.com/en-us/resources/blogs/spiderlabs-blog/a-simple-guide-to-getting-cves-published/), which is too long, as by the time the CVE is published, the vulnerability could have already been exploited. As such, VulnGuard uses heuristics for dependency checking, and the following documents the various heuristics used to determine if a package is malicious:
 
 **Time-Related Heuristics (checks against npm)**
 
