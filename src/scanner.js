@@ -287,6 +287,19 @@ async function analyzePackage(context) {
     );
   }
 
+  function specificFileToSearch(fileName, packages) {
+    return (
+      "{" +
+      packages
+        .flatMap((packageName) =>
+          path.join("node_modules", packageName, "**", fileName)
+        )
+        .join(",")
+        .replaceAll("\\", "/") +
+      "}"
+    );
+  }
+
   const MAX_THREAD = 900;
   const promiseArr = [];
   const promisePool = new PromisePool(() => {
@@ -309,7 +322,7 @@ async function analyzePackage(context) {
         ".tsx",
         ".mjs",
         ".json",
-      ]),
+      ], packagesToScan),
       EXCLUDE_DIRS
     )
     .then((fileset) => {
@@ -340,7 +353,7 @@ async function analyzePackage(context) {
     });
 
   const checkB = vscode.workspace
-    .findFiles(extListToSearch([".sh", ".bash", ".bat", ".cmd"]), EXCLUDE_DIRS)
+    .findFiles(extListToSearch([".sh", ".bash", ".bat", ".cmd"], packagesToScan), EXCLUDE_DIRS)
     .then((fileset) => {
       promiseArr.push(
         ...fileset.map((uri) => {
@@ -370,9 +383,7 @@ async function analyzePackage(context) {
     });
 
   const checkC = vscode.workspace
-    .findFiles(
-      path.join("node_modules", "**", "package.json").replaceAll("\\", "/")
-    )
+    .findFiles(specificFileToSearch("package.json", packagesToScan))
     .then((fileset) => {
       promiseArr.push(
         ...fileset.map((uri) => {
