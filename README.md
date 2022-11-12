@@ -1,9 +1,7 @@
 # VulnGuard
 VSCode Extension to lint code for security vulnerabilities.
 
-INSERT_VIDEO_HERE
-
-[Watch on Youtube]()
+[Watch on Youtube](https://youtu.be/BR0sAglNaFo)
 
 ## Installation
 Install it on in the VSCode Marketplace [here](https://marketplace.visualstudio.com/items?itemName=itzybitzyspider.vulnguard).
