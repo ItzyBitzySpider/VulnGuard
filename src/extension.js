@@ -21,8 +21,6 @@ const scanDependencies = require("./scanDependencies");
 const { exit } = require("process");
 const fs = require("fs");
 
-//TODO file opened state independent diagnostics
-
 /**
  * @param {vscode.ExtensionContext} context
  */
