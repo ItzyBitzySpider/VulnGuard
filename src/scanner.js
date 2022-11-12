@@ -56,6 +56,19 @@ async function semgrepRuleSetsScan(configs, path, exclude = []) {
       });
     }
   }
+  //filter hits for only unique entries
+  hits = hits.filter((hit, index, self) => {
+    return (
+      index ===
+      self.findIndex((t) => {
+        return (
+          t.range.start === hit.range.start &&
+          t.range.end === hit.range.end &&
+          t.message === hit.message
+        );
+      })
+    );
+  });
   return hits;
 }
 
