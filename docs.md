@@ -3,11 +3,9 @@
 ### Semgrep Scanning
 Utilises [Semgrep (Semantic Grep)](https://semgrep.dev/) to perform scanning. With its large userbase and extensive database of community curated rules, Semgrep allows for multiple scanning options. Semgrep allows for static analysis, dynamic analysis (sinks and taints), etc. VulnGuard allows for the addition of user-defined Semgrep rules/repositories on top of the existing default enabled rules.
 
-Semgrep rules follow the following format:
-```
+Semgrep Rules are stored in YAML files, and follow [this format](https://semgrep.dev/docs/writing-rules/rule-syntax/).
 
-```
-
+For more examples, refer to the list of [VulnGuard's default Semgrep rules](#default-rules).
 
 ### Regex/Pattern Matching Scanning
 For simpler rules that may not need Semgrep, Regex rules can be created. Regex rules perform Regex pattern matching on code files to look for vulnerabilities.
@@ -15,10 +13,10 @@ For simpler rules that may not need Semgrep, Regex rules can be created. Regex r
 Regex Rules are stored in YAML files, and follow the following general format:
 ```yml
 rules:
-    # id (Mandatory) - ID for the regex rule.
+    # id (Mandatory) - ID for the Regex rule.
   - id: <string>
 
-    # message (Mandatory) - Description to be provided to the user when the regex pattern is matched.
+    # message (Mandatory) - Description to be provided to the user when the Regex pattern is matched.
     message: <string>
 
     # severity (Mandatory) - Either "INFO", "WARNING", or "ERROR".
@@ -27,21 +25,21 @@ rules:
     # regex (Mandatory) - Regex pattern to be checked.
     regex: <string>
 
-    # case_sensitive (Optional) - Whether the regex provided should be compiled case sensitive.
+    # case_sensitive (Optional) - Whether the Regex pattern provided should be compiled case sensitive.
     case_sensitive: <boolean>
 
     # fix (Optional) - Fix to be applied to the line in which the Regex pattern is matched.
     fix: <string>
 
-    # reference (Optional) - Link for the user to 
+    # reference (Optional) - Link for the user to find out more about the vulnerability.
     reference: <string>
 ```
 
-VulnGuard also supports the use of the `regex_and`, `regex_or`, and `regex_not` fields, in addition to the nesting of multiple Regex patterns to form a Regex "tree".
+VulnGuard also supports the use of the `regex_and`, `regex_or`, and `regex_not` fields, in addition to the nesting of multiple Regex patterns to form a Regex "tree". VulnGuard will iterate through files line-by-line, and whenever a line matches a Regex pattern/tree, the line will be highlighted to the user.
 
 **Example 1**
 ```yml
-# This rule is equivalent to the condition (A || B || C), where A, B, C are Regex patterns.
+# This rule is equivalent to the condition (A || B || C), where A, B, and C are Regex patterns.
 
 rules:
   - id: 'example-1'
@@ -55,7 +53,7 @@ rules:
 
 **Example 2**
 ```yml
-# This rule is equivalent to the condition (A && B && (C || !D)), where A, B, C, D are Regex patterns.
+# This rule is equivalent to the condition (A && B && (C || !D)), where A, B, C, and D are Regex patterns.
 
 rules:
   - id: 'example-2'
@@ -69,7 +67,9 @@ rules:
           - regex_not: D
 ```
 
-For more examples, see [VulnGuard's default Regex rules](https://github.com/ItzyBitzySpider/VulnGuard/tree/main/files/regex_rules).
+Note: VulnGuard does not support the matching of multiline Regex patterns since Regex checking is done on a line-by-line basis.
+
+For more examples, see [VulnGuard's default Regex rules](./files/regex_rules).
 
 ### Default Rules
 Default Semgrep rules include:
