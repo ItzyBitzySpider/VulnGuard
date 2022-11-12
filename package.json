@@ -31,7 +31,8 @@
     "vscode:prepublish": "yarn run esbuild-base --minify",
     "esbuild-base": "esbuild ./src/extension.js --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
     "esbuild": "yarn run esbuild-base --sourcemap",
-    "esbuild-watch": "yarn run esbuild-base --sourcemap --watch"
+    "esbuild-watch": "yarn run esbuild-base --sourcemap --watch",
+    "deploy": "vsce publish --yarn"
   },
   "devDependencies": {
     "@types/glob": "^8.0.0",
@@ -42,7 +43,8 @@
     "esbuild": "^0.15.13",
     "eslint": "^8.26.0",
     "glob": "^8.0.3",
-    "mocha": "^10.1.0"
+    "mocha": "^10.1.0",
+    "vsce": "^2.14.0"
   },
   "dependencies": {
     "es6-promise-pool": "^2.5.0",
