@@ -24,8 +24,13 @@ The extension displays vulnerabilities found using VSCode's native viewspaces, e
 
 ![PROBLEMS_TAB_IMAGE](media/PROBLEMS_TAB_IMAGE.png)
 
-### Ignoring Specific Lines
-Using VSCode Quick Fix, you can disable VulnGuard or even specific ruleset(s) on a line (similar to ESLint) by clicking the Quick Fix "Light Bulb" feature or right click the error in the Problems tab.
+### Code Actions
+Using VSCode Quick Fix, you can perform Code Actions on a line (similar to ESLint) by clicking the Quick Fix "Light Bulb" feature or right click the error in the Problems tab.
+
+Currently, the following can be performed:
+- Disable VulnGuard or even specific ruleset(s)
+- Learn more about the ruleset(s)
+- Accept VulnGuard's proposed fix
 
 ![CODE_ACTION_PROBLEMS_TAB_IMAGE](media/CODE_ACTION_PROBLEMS_TAB_IMAGE.png)
 
