@@ -256,23 +256,31 @@ async function analyzePackage(context) {
   const packageJsonPath = packageJsonFilesets[0].fsPath;
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 
-  var packagesToScan = [];
+  let packagesToScan = [];
   if (packageJson["devDependencies"]) {
-    for (const package of Object.getOwnPropertyNames(packageJson["devDependencies"])) {
-      packagesToScan.push(...package);
+    for (const packageName of Object.getOwnPropertyNames(
+      packageJson["devDependencies"]
+    )) {
+      packagesToScan.push(...packageName);
     }
   }
   if (packageJson["dependencies"]) {
-    for (const package of Object.getOwnPropertyNames(packageJson["dependencies"])) {
-      packagesToScan.push(...package);
+    for (const packageName of Object.getOwnPropertyNames(
+      packageJson["dependencies"]
+    )) {
+      packagesToScan.push(...packageName);
     }
   }
 
-  function extListToSearch(input) {
+  function extListToSearch(exts, packages) {
     return (
       "{" +
-      input
-        .map((ext) => path.join("node_modules", "**", "*" + ext))
+      packages
+        .flatMap((packageName) =>
+          exts.map((ext) =>
+            path.join("node_modules", packageName, "**", "*" + ext)
+          )
+        )
         .join(",")
         .replaceAll("\\", "/") +
       "}"
