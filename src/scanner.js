@@ -252,6 +252,22 @@ async function analyzePackage(context) {
     cacheHits = {},*/
   let hits = {};
 
+  const packageJsonFilesets = await vscode.workspace.findFiles("package.json");
+  const packageJsonPath = packageJsonFilesets[0].fsPath;
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+
+  var packagesToScan = [];
+  if (packageJson["devDependencies"]) {
+    for (const package of Object.getOwnPropertyNames(packageJson["devDependencies"])) {
+      packagesToScan.push(...package);
+    }
+  }
+  if (packageJson["dependencies"]) {
+    for (const package of Object.getOwnPropertyNames(packageJson["dependencies"])) {
+      packagesToScan.push(...package);
+    }
+  }
+
   function extListToSearch(input) {
     return (
       "{" +
