@@ -390,6 +390,20 @@ async function analyzePackage(context) {
                   )
                 );
               }
+              datChecks.push(async () => {
+                const resolve = await npmRegistryCheck(
+                  moduleName,
+                  uri.fsPath
+                ).catch((reject) =>
+                  console.warn(
+                    "Unable to perform npm registry check on module",
+                    moduleName,
+                    "due to",
+                    reject
+                  )
+                );
+                hits[moduleHash].push(...resolve);
+              });
 
               //Taken from https://github.com/mbalabash/sdc-check
               let hasNoSourceCodeRefInHomepage =
@@ -424,17 +438,6 @@ async function analyzePackage(context) {
             } catch (e) {
               console.warn("Invalid JSON found in " + uri.fsPath);
             }
-
-            // await npmRegistryCheck(moduleName, uri.fsPath).then(
-            //   (resolve) => hits[moduleHash].push(...resolve),
-            //   (reject) =>
-            //     console.warn(
-            //       "Unable to perform npm registry check on module",
-            //       moduleName,
-            //       "due to",
-            //       reject
-            //     )
-            // );
           };
         })
       );
@@ -768,7 +771,11 @@ function initScanner(context) {
       path.join(context.extensionPath, "files", "semgrep_rules")
     );
 
-    const defaultSemgrepRepositoriesPath = path.join(context.extensionPath, "files", "semgrep_repositories.json");
+    const defaultSemgrepRepositoriesPath = path.join(
+      context.extensionPath,
+      "files",
+      "semgrep_repositories.json"
+    );
     if (fs.existsSync(defaultSemgrepRepositoriesPath)) {
       const defaultSemgrepRepositories = JSON.parse(
         fs.readFileSync(defaultSemgrepRepositoriesPath, "utf8")
