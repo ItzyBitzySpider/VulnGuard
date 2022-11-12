@@ -132,7 +132,7 @@ class FixVulnCodeActionProvider {
       );
       readDocsAction.command = {
         title: "docs",
-        command: "vulnguard.docs",
+        command: "itzybitzyspider.vulnguard.docs",
         arguments: [diagnostic.code.target],
       };
       output.push(readDocsAction);
@@ -169,7 +169,7 @@ class UnsafePackageCodeActionProvider {
     );
     readDocsAction.command = {
       title: "docs",
-      command: "vulnguard.docs",
+      command: "itzybitzyspider.vulnguard.docs",
       arguments: [diagnostic.code.target],
     };
     return readDocsAction;
