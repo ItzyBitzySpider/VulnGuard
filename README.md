@@ -20,19 +20,19 @@ Currently, VulnGuard supports 3 types of checks:
 ### Viewing of Vulnerability
 The extension displays vulnerabilities found using VSCode's native viewspaces, eliminating the need for extra programs installed. Vulnerabilities are "linted" in the editor itself and also shown in the Problems tab.
 
-INLINE_CODE_ACTIONS_IMAGE
+![INLINE_CODE_ACTIONS_IMAGE](media/INLINE_CODE_ACTIONS_IMAGE.png)
 
-PROBLEMS_TAB_IMAGE
+![PROBLEMS_TAB_IMAGE](media/PROBLEMS_TAB_IMAGE.png)
 
 ### Ignoring Specific Lines
 Using VSCode Quick Fix, you can disable VulnGuard or even specific ruleset(s) on a line (similar to ESLint) by clicking the Quick Fix "Light Bulb" feature or right click the error in the Problems tab.
 
-CODE_ACTION_PROBLEMS_TAB_IMAGE
+![CODE_ACTION_PROBLEMS_TAB_IMAGE](media/CODE_ACTION_PROBLEMS_TAB_IMAGE.png)
 
 ### Configuration
 You can disable specific rulesets, specify which files to ignore via glob patterns, and even configure which checks to run entirely within the VulnGuard Dashboard GUI.
 
-CONFIGURATION_DASHBOARD_IMAGE
+![CONFIGURATION_DASHBOARD_IMAGE](media/CONFIGURATION_DASHBOARD_IMAGE.png)
 
 ### How It Works
 You can read more about what's under the hood in [docs.md](./docs.md).
@@ -47,7 +47,8 @@ VulnGuard aligns itself towards shift-left testing by moving code vulnerability 
 VulnGuard incorporates the best elements of existing scanners and solutions on the market. At present, VulnGuard supports RegEx and [Semgrep](https://semgrep.dev) checking. Semgrep is a "fast, open-source, static analysis tool for finding bugs at editor, commit and CI time". RegEx checks allows developers to add additional rules (on top of the default rulesets) to capture for more security vulnerabilities. In addition, VulnGuard incorporates dependency checking based on heuristics. This builds upon the existing work done by [Spaceracoon](https://github.com/spaceraccoon/). The specific resources can be found under [References](#references).
 
 ## Future Improvements
-In future, AI???????????????/
+
+TO_FILL
 
 ## References
 - https://github.com/microsoft/DevSkim
