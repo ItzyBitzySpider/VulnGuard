@@ -462,14 +462,14 @@ async function analyzePackage(context) {
 
               const res = await Promise.all(datChecks);
               res.forEach((r) => {
-                if (r.length) hits[moduleName].push(...r);
+                if (r && r.length) hits[moduleName].push(...r);
               });
 
               const duration = performance.now() - start;
               if (duration > 30000)
                 console.warn(`<C> scan for ${uri.fsPath} took ${duration}ms`);
             } catch (e) {
-              console.warn("Invalid JSON found in " + uri.fsPath);
+              console.error("Error encountered for checkC", e);
             }
           };
         })
