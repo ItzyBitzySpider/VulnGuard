@@ -69,7 +69,7 @@ async function activate(context) {
   featureList.push(
     new Feature(
       "dependency",
-      "Unsecure Dependencies",
+      "Insecure Dependencies",
       (file) => scanDependencies(file, context),
       () => ({
         enabled: Global.dependencyRegexRuleSets,
