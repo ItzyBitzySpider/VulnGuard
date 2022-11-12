@@ -261,14 +261,14 @@ async function analyzePackage(context) {
     for (const packageName of Object.getOwnPropertyNames(
       packageJson["devDependencies"]
     )) {
-      packagesToScan.push(...packageName);
+      packagesToScan.push(packageName);
     }
   }
   if (packageJson["dependencies"]) {
     for (const packageName of Object.getOwnPropertyNames(
       packageJson["dependencies"]
     )) {
-      packagesToScan.push(...packageName);
+      packagesToScan.push(packageName);
     }
   }
 
@@ -314,15 +314,10 @@ async function analyzePackage(context) {
 
   const checkA = vscode.workspace
     .findFiles(
-      extListToSearch([
-        ".coffee",
-        ".js",
-        ".jsx",
-        ".ts",
-        ".tsx",
-        ".mjs",
-        ".json",
-      ], packagesToScan),
+      extListToSearch(
+        [".coffee", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".json"],
+        packagesToScan
+      ),
       EXCLUDE_DIRS
     )
     .then((fileset) => {
@@ -353,7 +348,10 @@ async function analyzePackage(context) {
     });
 
   const checkB = vscode.workspace
-    .findFiles(extListToSearch([".sh", ".bash", ".bat", ".cmd"], packagesToScan), EXCLUDE_DIRS)
+    .findFiles(
+      extListToSearch([".sh", ".bash", ".bat", ".cmd"], packagesToScan),
+      EXCLUDE_DIRS
+    )
     .then((fileset) => {
       promiseArr.push(
         ...fileset.map((uri) => {
