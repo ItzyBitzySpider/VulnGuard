@@ -764,6 +764,25 @@ function initScanner(context) {
     loadSemgrepRuleSets(
       path.join(context.extensionPath, "files", "semgrep_rules")
     );
+
+    const defaultSemgrepRepositoriesPath = path.join(context.extensionPath, "files", "semgrep_repositories.json");
+    if (fs.existsSync(defaultSemgrepRepositoriesPath)) {
+      const defaultSemgrepRepositories = JSON.parse(
+        fs.readFileSync(defaultSemgrepRepositoriesPath, "utf8")
+      );
+      for (const defaultSemgrepRepository of defaultSemgrepRepositories) {
+        if (!defaultSemgrepRepository.startsWith("p/")) {
+          console.error(
+            "Unable to load Default Semgrep Repository",
+            defaultSemgrepRepository,
+            "since it does not start with p/"
+          );
+        } else {
+          loadSemgrepRuleSet(defaultSemgrepRepository);
+        }
+      }
+    }
+
     if (userRulesets["semgrep"]) {
       //There are user-created Semgrep RuleSets
       for (const semgrepRuleset of userRulesets["semgrep"]) {

@@ -28,8 +28,6 @@ Supply chain attacks --> Want to ensure dependecies and modules imported are saf
 
 When packages are installed/added, package.JSON is naturally modified in the process of installing/adding packages. VulnGuard scans all packages in `node_modules/` whenever package.JSON is updated. Should packages be detected as malicious, warnings will be shown on package.JSON to the developer. 
 
-(KIV)
-In addition, new rules will automatically be created to catch any code utilising such malicious packages. Developers who may not check package.JSON will be informed of malicious package when they attempt to import these packages in their code through the newly created rule. 
 
 Dependency Checking builds upon the work done by SpaceRaccoon in npm-scan and other sdc (simple dependency check). The following documents the various heuristics used to determine if a package is malicious. 
 
@@ -53,3 +51,9 @@ Currently, user-defined rules and modules are not enabled thru the GUI, but can 
 - Semgrep is not supported on windows at the moment, and so is automatically disabled for windows laptops. 
 - Semgrep can be automatically installed through the VSCode Extension either using `homebrew` or `pip`. If the installation fails however, one can refer to semgrep docs (LINK DOCS) to configure semgrep for their system. 
 - The demo was conducted in Linux
+
+
+### Assumptions made during Dependency Checks
+Note, we only scan packages defined in package.JSON of the project. While this may sound like a problem, the following assumptions are made:
+1) A maintained package will be able to resolve any malicious packages being used in its codebase (conversely, a package determined to be unmaintained should not be used at all)
+2) A package with long intervals between releases is likely compromised and its modules are not updated, as such the package should not be used at all. 
