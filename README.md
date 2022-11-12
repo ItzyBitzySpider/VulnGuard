@@ -12,8 +12,8 @@ INSERT_VIDEO_HERE
 VulnGuard scans your Node.js projects for security vulnerabilities on-the-fly as you type code. The goal is to notify developers as they are introducing a security vulnerability in order to fix the issue at the point of introduction.
 
 Currently, VulnGuard supports 3 types of checks:
-- SemGrep (Not available on Windows systems)
-- RegEx
+- Semgrep (Not available on Windows systems)
+- Regex
 - Dependency Scanning
 
 ### Viewing 
@@ -22,7 +22,7 @@ Currently, VulnGuard supports 3 types of checks:
 Using VSCode Quick Fix, you can disable VulnGuard or even specific ruleset(s) on a line (similar to ESLint).
 
 ### Configuration
-You can disable specific rulesets, specify which files to ignore via glob patterns, and even configure which checks to run entirely via the VulnGuard Dashboard GUI.
+You can disable specific rulesets, specify which files to ignore via glob patterns, and even configure which checks to run entirely within the VulnGuard Dashboard GUI.
 
 ![VulnGuard Dashboard](media/vulnguard.png)
 
@@ -43,9 +43,9 @@ A. VulnGuard incorporates the best elements of existing scanners and solutions o
 In future, we unga bunga AI lmfao
 
 ## References
-https://github.com/microsoft/DevSkim
-https://github.com/spaceraccoon/npm-scan/
-https://github.com/NodeSecure/js-x-ray
-https://github.com/mbalabash/sdc-check
-https://github.com/insidersec/insider
-https://github.com/ajinabraham/njsscan
+- https://github.com/microsoft/DevSkim
+- https://github.com/spaceraccoon/npm-scan/
+- https://github.com/NodeSecure/js-x-ray
+- https://github.com/mbalabash/sdc-check
+- https://github.com/insidersec/insider
+- https://github.com/ajinabraham/njsscan
