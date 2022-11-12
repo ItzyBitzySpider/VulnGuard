@@ -1,11 +1,13 @@
-# Some Documentation (to be cleaned up)
+# Some Documentation
 
 ### Semgrep Scanning
-Utilises [Semgrep (Semantic Grep)](https://semgrep.dev/) to perform scanning. With its large userbase and extensive database of community curated rules, Semgrep allows for multiple scanning options. Semgrep allows for static analysis, dynamic analysis (sinks and taints), etc. VulnGuard allows for the addition of user-defined Semgrep rules/repositories on top of the existing default enabled rules.
+VulnGuard utilises [Semgrep (Semantic Grep)](https://semgrep.dev/) to perform scanning. Semgrep's [high performance](https://semgrep.dev/docs/faq/#besides-open-source-and-ease-of-writing-new-rules-what-else-is-different-about-semgrep), large userbase, and extensive database of community-curated rules makes it a powerful tool to detect vulnerabilities. Semgrep has multiple scanning modes, allowing for the use of static analysis, dynamic analysis (sinks and taints), and [much more](https://semgrep.dev/docs/writing-rules/experiments/introduction/). VulnGuard comes with various open-source rules enabled by default, but also allows for the users to add/import their own Semgrep rules/repositories.
 
 Semgrep Rules are stored in YAML files, and follow [this format](https://semgrep.dev/docs/writing-rules/rule-syntax/).
 
 For more examples, refer to the list of [VulnGuard's default Semgrep rules](#default-rules).
+
+For information on how to add user-defined Semgrep rules/repositories, see [this](#user-defined-rules).
 
 ### Regex/Pattern Matching Scanning
 For simpler rules that may not need Semgrep, Regex rules can be created. Regex rules perform Regex pattern matching on code files to look for vulnerabilities.
@@ -67,9 +69,11 @@ rules:
           - regex_not: D
 ```
 
-Note: VulnGuard does not support the matching of multiline Regex patterns since Regex checking is done on a line-by-line basis.
+Note: VulnGuard does not support the matching of multi-line Regex patterns since Regex checking is done on a line-by-line basis.
 
 For more examples, see [VulnGuard's default Regex rules](./files/regex_rules).
+
+For information on how to add user-defined Regex rules, see [this](#user-defined-rules).
 
 ### Default Rules
 Default Semgrep rules include:
@@ -90,43 +94,57 @@ Default Regex rules are curated from various sources, and include:
 2. [insider](https://github.com/insidersec/insider)
 3. [njsscan](https://github.com/ajinabraham/njsscan)
 
-Other rules include:
-
 ### User-Defined Rules
 Users can add their own custom rules to be used as part of Semgrep/Regex scanning. This configuration persists through shutdowns and restarts of VSCode.
 
+
+To add a custom rule, simply navigate to the VulnGuard Dashboard, click the "Plus" icon, and navigate to the YAML file containing the Semgrep/Regex rules to register it with VulnGuard.
+
+USER_DEFINED_RULES_IMAGE
+
 ### Dependency Checking
-Supply chain attacks --> Want to ensure dependecies and modules imported are safe and not malicious. Given the inherent trust given to npm packages with no vulnerability scanning, it is important to check modules/packages.
+When developing software, it is important to ensure that the dependencies imported are safe and not malicious. This is especially so for web development, given how web applications are inherently vulnerable to a wider range of threats due to web applications possessing a larger attack surface. This makes web applications much more susceptible to [Supply Chain Attacks](https://learn.microsoft.com/en-us/microsoft-365/security/intelligence/supply-chain-malware), where attackers try to compromise software by targeting less secure modules/packages used. Given the inherent trust given to npm packages with [limited vulnerability scanning](https://docs.npmjs.com/auditing-package-dependencies-for-security-vulnerabilities), it is important to check modules/packages in greater detail.
 
 
-When packages are installed/added, `package.json` is naturally modified in the process of installing/adding packages. VulnGuard scans all dependency packages listed in `package.json` whenever `package.json` is updated. Should packages be detected as malicious, warnings will be shown to the developer when viewing `package.json`.
+While it is important to check modules imported, VulnGuard only scans packages defined in `package.json` of the project (i.e. the "top-level" packages) for vulnerabilities. This is due to the fact that it is not necessarily optimal to check _all_ modules imported by an application, given how many imported modules will have their own dependencies, and so on. Although it may seem to be beneficial to check all the imported modules' dependencies as well, in reality, the vast majority of vulnerabilities found in these dependencies are ["unreachable"](https://snyk.io/blog/reachable-vulnerabilities/) and do not affect the application. This is further reinforced by the fact that secure "top-level" packages should be maintained, and be able to resolve any malicious/vulnerable packages being used in its codebase. Conversely, any unsecure "top-level" packages would be flagged out by VulnGuard and highlighted to the developer. Reducing the number of modules being checked by VulnGuard also has the added benefit of lowering the runtime for the dependency checks, ensuring that developers get the dependency check results faster.
 
 
-Dependency Checking builds upon the work done by Spaceraccoon in [npm-scan](https://github.com/spaceraccoon/npm-scan) and other SDC (Simple Dependency Check) tools. The following documents the various heuristics used to determine if a package is malicious:
-
-1. No Source Code Repository for package ([sdc-check](https://github.com/mbalabash/sdc-check))
-2. Unmaintained Package (checks against NPM) ([sdc-check](https://github.com/mbalabash/sdc-check))
-3. Unusually long time between releases for package (checks against NPM) ([sdc-check](https://github.com/mbalabash/sdc-check))
-4. OS Scripts (.sh, .bat, etc.) found within packages ([sdc-check](https://github.com/mbalabash/sdc-check))
-5. Fetching of Content Security Policy (CSP) ([npm-scan](https://github.com/spaceraccoon/npm-scan))
-6. Creation of Child Processes ([npm-scan](https://github.com/spaceraccoon/npm-scan))
-7. JJEncode Code Obfuscation ([npm-scan](https://github.com/spaceraccoon/npm-scan))
-8. Unicode Code Obfuscation ([js-x-ray](https://github.com/NodeSecure/js-x-ray))
-9. Package main module export is minified ([npm-scan](https://github.com/spaceraccoon/npm-scan))
-10. Install Scripts found in manifest scripts ([npm-scan](https://github.com/spaceraccoon/npm-scan))
-11. Shell Commands found in manifest scripts ([sdc-check](https://github.com/mbalabash/sdc-check))
+When packages are installed/added, `package.json` is naturally modified in the process of installing/adding packages. VulnGuard scans all dependency packages listed in `package.json` whenever `package.json` is updated, and should packages be detected as malicious, warnings will be shown to the developer when viewing `package.json`.
 
 
-Currently, user-defined rules and modules are not enabled through the GUI, but can be done manually. Currently, only user-defined Regex rules are supported. They follow the same format as Regex rules mentioned above. 
+VulnGuard's Dependency Checking builds upon the work done by Spaceraccoon in [npm-scan](https://github.com/spaceraccoon/npm-scan) and other SDC (Simple Dependency Check) tools. The following documents the various heuristics used to determine if a package is malicious:
 
+**Time-Related Heuristics (checks against npm)**
+
+1. Unmaintained Package ([sdc-check](https://github.com/mbalabash/sdc-check))
+2. Unusually long time between releases for package ([sdc-check](https://github.com/mbalabash/sdc-check))
+
+**Obfusication-Related Heuristics**
+
+3. No Source Code Repository for package ([sdc-check](https://github.com/mbalabash/sdc-check))
+4. JJEncode Code Obfuscation ([npm-scan](https://github.com/spaceraccoon/npm-scan))
+5. Unicode Code Obfuscation ([js-x-ray](https://github.com/NodeSecure/js-x-ray))
+6. Package main module export is minified ([npm-scan](https://github.com/spaceraccoon/npm-scan))
+
+**Behavior-Related Heuristics**
+
+7. OS Scripts (.sh, .bat, etc.) found within packages ([sdc-check](https://github.com/mbalabash/sdc-check))
+8. Install Scripts found in manifest scripts ([npm-scan](https://github.com/spaceraccoon/npm-scan))
+9. Shell Commands found in manifest scripts ([sdc-check](https://github.com/mbalabash/sdc-check))
+10. Fetching of Content Security Policy (CSP) ([npm-scan](https://github.com/spaceraccoon/npm-scan))
+11. Creation of Child Processes ([npm-scan](https://github.com/spaceraccoon/npm-scan))
+
+
+### Performance
+
+Ensuring VulnGuard's scan runtime is low is important to ensure that the Extension is responsive to changes in code made by the developer, so that they can be notified as soon as possible when they introduce a vulnerability. The following documents the ways that VulnGuard tries to achieve a low scan runtime:
+
+1. All rule validation and compilation is done during initialization before any scans are performed.
+2. All scans performed are done asynchronously on a per-file-per-rule basis.
+3. The whole project is only scanned once as a whole during initialization, and afterwards, all subsequent scans on files are only done when they have been modified by the developer.
+4. For dependency checking, only the top-level packages are being checked for vulnerabilities.
 
 ### Other Notes
-- Semgrep is not supported on Windows at the moment, and so is automatically disabled on Windows computers.
+- Semgrep is not supported on Windows at the moment, and so is automatically disabled on Windows environments.
 - Semgrep can be automatically installed through the VSCode Extension using either `homebrew` or `pip`. If the installation fails however, one can refer to [Semgrep Docs](https://semgrep.dev/docs/getting-started/) on how to configure Semgrep for their system. 
-- The demo was conducted in Linux.
-
-
-### Assumptions made during Dependency Checks
-Note: We only scan packages defined in `package.json` of the project. While this may sound like a problem, the following assumptions are made:
-1) A maintained package will be able to resolve any malicious packages being used in its codebase (conversely, a package determined to be unmaintained should not be used at all).
-2) A package with long intervals between releases is likely compromised and its modules are not updated, as such the package should not be used at all.
+- The demo was conducted in Linux to showcase VulnGuard's Semgrep functionality.
