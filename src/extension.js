@@ -79,7 +79,7 @@ async function activate(context) {
   );
 
   const packageJsonWatcher =
-    vscode.workspace.createFileSystemWatcher("package.json");
+    vscode.workspace.createFileSystemWatcher("**/package.json");
   const packageCodeActions = vscode.languages.registerCodeActionsProvider(
     { language: "json", pattern: "package.json" },
     new UnsafePackageCodeActionProvider()
