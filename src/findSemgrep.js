@@ -38,9 +38,16 @@ async function findSemgrep(ctx) {
       terminal.sendText(command + " install semgrep && exit");
       vscode.window.onDidCloseTerminal((t) => {
         if (t == terminal) {
-          vscode.window.showInformationMessage(
-            "Semgrep successfully installed"
-          );
+          vscode.window
+            .showInformationMessage(
+              "Semgrep successfully installed. Restart Visual Studio Code for Semgrep to work normally",
+              "Restart"
+            )
+            .then((value) => {
+              if (value)
+                vscode.commands.executeCommand("workbench.action.reloadWindow");
+            });
+
           if (resp == brew_install) {
             vscode.window.showInformationMessage(
               "Please run *sudo launchctl config user path '$(brew --prefix)/bin:${PATH}'* and restart to enable Semgrep. See [https://docs.brew.sh/FAQ#my-mac-apps-dont-find-homebrew-utilities]"

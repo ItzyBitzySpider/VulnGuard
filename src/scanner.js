@@ -770,6 +770,7 @@ function validRuleSet(path) {
 
 //Initialize and abstract away backend for frontend
 function initScanner(context) {
+  console.log("Initializing Scanner...");
   //Load disabled.json into memory
   const disabled = getDisabledRules(context);
 
@@ -880,6 +881,7 @@ function initScanner(context) {
     }
   }
   setDisabledRules(context, cleanedDisabled); //Update disabled.json (if necessary)
+  console.log("Scanner Initialized!");
   return (
     Global.regexRuleSets,
     Global.enabledRegexRuleSets,
@@ -986,6 +988,7 @@ function enableRuleSet(context, path) {
 }
 
 function initDependencyScanner(context) {
+  console.log("Initializing Dependency Scanner...")
   //Helper Functions (TODO: Cleanup and remove hacky mess)
   function loadDependencyRegexRuleSet(path, dependencyType) {
     //Wrap around function _loadRegexRuleSet() to catch exceptions thrown
@@ -1026,7 +1029,7 @@ function initDependencyScanner(context) {
     path.join(context.extensionPath, "files", "dep_manifest_scripts_rules"),
     "manifest.scripts"
   );
-
+  console.log("Dependency Scanner Initialized!");
   return Global.dependencyRegexRuleSets;
 }
 
