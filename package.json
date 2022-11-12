@@ -17,7 +17,7 @@
   "contributes": {
     "commands": [
       {
-        "command": "vulnguard.dashboard",
+        "command": "itzybitzyspider.vulnguard.dashboard",
         "title": "VulnGuard: Show Dashboard"
       }
     ]

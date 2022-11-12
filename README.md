@@ -2,29 +2,33 @@
 VSCode extension to lint code for security vulnerabilities
 
 ## Features
+### Vulnerability Scanning
+VulnGuard scans your Node.js projects for security vulnerabilities on-the-fly as you type code. Currently, VulnGuard supports 3 types of checks:
+- SemGrep (Not available on Windows systems)
+- RegEx
+- Dependency Scanning
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+### Viewing 
 
-For example if there is an image subfolder under your extension project workspace:
+### Ignoring Specific Lines
+Using VSCode Quick Fix, you can disable VulnGuard or even specific ruleset on a line (Similar to eslint)
 
-\!\[feature X\]\(images/feature-x.png\)
+### Configuration
+You can configure the rulesets and even disable specific checks entirely via the VulnGuard Dashboard.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+![VulnGuard Dashboard]()
+
+### How It Works
+You can read more about what's under the hood in [docs.md](./docs.md)
 
 ## Requirements
-
 If you have any requirements or dependencies, add a section describing those and how to install and configure them.
 
-## Extension Settings
+## Installing
+You can install the latest version on the 
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
 
-For example:
 
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
 
 ## Known Issues
 

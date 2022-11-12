@@ -186,10 +186,10 @@ async function activate(context) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("vulnguard.dashboard", () =>
+    vscode.commands.registerCommand("itzybitzyspider.vulnguard.dashboard", () =>
       createWebview(context)
     ),
-    vscode.commands.registerCommand("vulnguard.docs", (uri) =>
+    vscode.commands.registerCommand("itzybitzyspider.vulnguard.docs", (uri) =>
       vscode.env.openExternal(uri)
     ),
     Global.vulnDiagnostics,
