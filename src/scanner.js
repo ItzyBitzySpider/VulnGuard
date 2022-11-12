@@ -223,13 +223,15 @@ function npmRegistryCheck(packageName, filePath) {
           });
         }
 
-        //TODO add reference
+        
         //182.5 Days (about 6 months)
         if (new Date() - currentVersionDate > 15768000) {
           result.push({
             id: "unmaintained-package",
             message:
               "Unmaintained package - Consider switching to a maintained package",
+            reference:
+              'https://github.com/mbalabash/sdc-check',
             severity: "WARNING",
           });
         }
@@ -368,7 +370,7 @@ async function analyzePackage(context) {
             }*/
             if (!hits[moduleName]) hits[moduleName] = [];
             hits[moduleName].push({
-              //TODO add reference
+              reference: 'https://github.com/mbalabash/sdc-check',
               severity: "WARNING",
               message: "Package includes OS scripts - you should verify them",
               id: "has-os-scripts",
@@ -438,7 +440,6 @@ async function analyzePackage(context) {
                 })()
               );
 
-              //Taken from https://github.com/mbalabash/sdc-check
               let hasNoSourceCodeRefInHomepage =
                 typeof dat.homepage !== "string" ||
                 (!dat.homepage.includes("github") &&
@@ -453,7 +454,7 @@ async function analyzePackage(context) {
                 hasNoSourceCodeRefInRepository
               ) {
                 hits[moduleName].push({
-                  //TODO add reference
+                  reference: 'https://github.com/mbalabash/sdc-check',
                   severity: "WARNING",
                   message: "No source code repository found for package",
                   id: "no-source-code-repository",
