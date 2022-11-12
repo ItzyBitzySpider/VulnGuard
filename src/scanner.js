@@ -183,11 +183,11 @@ function applyRegexCheck(node, parent_type, text) {
 
 //Dependency Check
 function npmRegistryCheck(packageName, filePath) {
-  return new Promise((resolve, reject) => {
+   return new Promise((resolve, reject) => {
     const data = fs.readFileSync(filePath, "utf8");
     const packageManifest = JSON.parse(data);
     const currentVersion = packageManifest.version;
-    let result = null;
+    let result = [];
 
     https.get(`https://registry.npmjs.org/${packageName}`, (response) => {
       if (response.status >= 400) {
@@ -214,30 +214,30 @@ function npmRegistryCheck(packageName, filePath) {
         //Taken from https://github.com/spaceraccoon/npm-scan/
         //730 Days (about 2 years)
         if (currentVersionDate - previousVersionDate > 63072000) {
-          result = {
+          result.push({
             id: "lastUpdated",
             message: "Unusually long time between previous and current version",
             reference:
               "https://snyk.io/blog/malicious-code-found-in-npm-package-event-stream/",
             severity: "WARNING",
-          };
+          });
         }
 
         //TODO add reference
         //182.5 Days (about 6 months)
         if (new Date() - currentVersionDate > 15768000) {
-          result += {
+          result.push({
             id: "unmaintained-package",
             message:
               "Unmaintained package - Consider switching to a maintained package",
             severity: "WARNING",
-          };
+          });
         }
 
         resolve(result);
       });
     });
-  });
+   });
 }
 
 /*async function loadYarnLock() { //TODO: Test if this works
@@ -434,7 +434,7 @@ async function analyzePackage(context) {
                       reject
                     )
                   );
-                  if (resolve) hits[moduleName].push(...resolve);
+                  hits[moduleName].push(...resolve);
                 })()
               );
 
@@ -513,7 +513,7 @@ async function analyzePackage(context) {
   for (const moduleHash of Object.getOwnPropertyNames(cacheHits)) {
     hits[moduleHash] = cached[moduleHash];
   }*/
-
+  console.log(hits)
   return hits;
 }
 
