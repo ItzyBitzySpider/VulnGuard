@@ -100,7 +100,7 @@ Users can add their own custom rules to be used as part of Semgrep/Regex scannin
 
 To add a custom rule, simply navigate to the VulnGuard Dashboard, click the "Plus" icon, and navigate to the YAML file containing the Semgrep/Regex rules to register it with VulnGuard.
 
-USER_DEFINED_RULES_IMAGE
+![USER_DEFINED_RULES_IMAGE](media/USER_DEFINED_RULES_IMAGE.png)
 
 ### Dependency Checking
 When developing software, it is important to ensure that the dependencies imported are safe and not malicious. This is especially so for web development, given how web applications are inherently vulnerable to a wider range of threats due to web applications possessing a larger attack surface. This makes web applications much more susceptible to [Supply Chain Attacks](https://learn.microsoft.com/en-us/microsoft-365/security/intelligence/supply-chain-malware), where attackers try to compromise software by targeting less secure modules/packages used. Given the inherent trust given to npm packages with [limited vulnerability scanning](https://docs.npmjs.com/auditing-package-dependencies-for-security-vulnerabilities), it is important to check modules/packages in greater detail.
