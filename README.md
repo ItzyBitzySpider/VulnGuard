@@ -19,15 +19,15 @@ Currently, VulnGuard supports 3 types of checks:
 ### Viewing 
 
 ### Ignoring Specific Lines
-Using VSCode Quick Fix, you can disable VulnGuard or even specific ruleset on a line (Similar to eslint)
+Using VSCode Quick Fix, you can disable VulnGuard or even specific ruleset(s) on a line (similar to ESLint).
 
 ### Configuration
-You can configure the rulesets and even disable specific checks entirely via the VulnGuard Dashboard.
+You can disable specific rulesets, specify which files to ignore via glob patterns, and even configure which checks to run entirely via the VulnGuard Dashboard GUI.
 
 ![VulnGuard Dashboard](media/vulnguard.png)
 
 ### How It Works
-You can read more about what's under the hood in [docs.md](./docs.md)
+You can read more about what's under the hood in [docs.md](./docs.md).
 
 ## Pitch
 Something somethibg about scanning code
@@ -36,7 +36,7 @@ Something somethibg about scanning code
 A. VulnGuard shift-left lah, etc etc
 
 **Q. How is this different from other scanners out there**
-A. VulnGuard incoperates the best elements from existing scanner and solutions in the market. etc etc. In addition, VulnGuard incoperates depenedncy checking based on heuristics. This builds upon the existing work done by space rac etc etc
+A. VulnGuard incorporates the best elements of existing scanners and solutions on the market. etc etc. In addition, VulnGuard incorporates dependency checking based on heuristics. This builds upon the existing work done by space rac etc etc
 
 ## Future
 
