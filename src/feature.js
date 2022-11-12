@@ -66,8 +66,8 @@ class Feature {
    */
   getRulesetData() {
     const rulesets = this.getRuleParams();
-    const enabled = rulesets.enabled.map((r) => r.path);
-    const all = rulesets.all.map((r) => r.path);
+    const enabled = rulesets.enabled.map((r) => r.path ? r.path : r); //TODO: Normalize field format in scanner.js
+    const all = rulesets.all.map((r) => r.path ? r.path : r);
     const outputRulesets = new Map();
     all.forEach((path) => outputRulesets.set(path, false));
     enabled.forEach((path) => {
