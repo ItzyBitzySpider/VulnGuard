@@ -2,8 +2,8 @@ rules:
   - id: test-regex-or
     message: 'regex OR expression'
     severity: WARNING
-    reference: "https://www.bing.com"
     case_sensitive: true
+    fix: 'AAAA'
     regex:
       - regex_or:
         - regex: '\bdb.many\b'

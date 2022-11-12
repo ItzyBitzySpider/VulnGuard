@@ -57,7 +57,7 @@ async function scanDependencies(file, context) {
         source: "VulnGuard",
         code: {
           value: toKebabCase(id),
-          target: vuln.reference ? vscode.Uri.parse(vuln.reference) : undefined,
+          target: vuln.reference ? vscode.Uri.parse(vuln.reference) : id,
         },
       });
     });

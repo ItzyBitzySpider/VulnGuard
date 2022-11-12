@@ -37,9 +37,9 @@ function updateDiagnostics(files) {
             value: toKebabCase(vuln.id),
             target: vuln.reference
               ? vscode.Uri.parse(vuln.reference)
-              : undefined,
+              : vuln.id,
           },
-          tags: vuln.fix ? [vuln.fix] : undefined,
+          ...(vuln.fix && {tags: [vuln.fix] }),
         });
       });
       Global.vulnDiagnostics.set(document.uri, diagnostics);
