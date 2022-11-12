@@ -5,7 +5,8 @@ INSERT_VIDEO_HERE
 
 [Watch on Youtube]()
 
-## Usage (or maybe called Install???)
+## Installation
+Install it on in the VSCode Marketplace [here](https://marketplace.visualstudio.com/items?itemName=itzybitzyspider.vulnguard)
 
 ## Features
 ### Vulnerability Scanning
@@ -16,31 +17,35 @@ Currently, VulnGuard supports 3 types of checks:
 - RegEx
 - Dependency Scanning
 
-### Viewing 
+### Viewing of Vulnerability
+The extension displays vulnerabilities found using VSCode's native viewspaces, eliminating the need for extra programs installed. Vulnerabilities are "linted" in the editor itself and also shown in the Problems tab.
+
+INLINE_CODE_ACTIONS_IMAGE
+
+PROBLEMS_TAB_IMAGE
 
 ### Ignoring Specific Lines
-Using VSCode Quick Fix, you can disable VulnGuard or even specific ruleset(s) on a line (similar to ESLint).
+Using VSCode Quick Fix, you can disable VulnGuard or even specific ruleset(s) on a line (similar to ESLint) by clicking the Quick Fix "Light Bulb" feature or right click the error in the Problems tab.
+
+CODE_ACTION_PROBLEMS_TAB_IMAGE
 
 ### Configuration
 You can disable specific rulesets, specify which files to ignore via glob patterns, and even configure which checks to run entirely via the VulnGuard Dashboard GUI.
 
-![VulnGuard Dashboard](media/vulnguard.png)
+CONFIGURATION_DASHBOARD_IMAGE
 
 ### How It Works
 You can read more about what's under the hood in [docs.md](./docs.md).
 
-## Pitch
-Something somethibg about scanning code
+## FAQ
+**So how does VulnGuard help prevent security incidents?**
+VulnGuard aligns itself towards shift-left testing by moving code vulnerability scanning earlier in the development lifecycle. Late testing has commonly resulted in vulnerabilities found later in the development lifecycle, requiring more work to rectify such errors - this is especially so when a unsafe package is added as a dependency. Instead of scanning code in CI testing when code is committed to a Git repository, VulnGuard scans code while the developer is still writing code locally. This allows users to rectify security issues earlier even before they are committed to the remote repository. 
 
-**Q. So how does VulnGuard help prevent such incidents?**
-A. VulnGuard shift-left lah, etc etc
+**How is this different from other scanners out there**
+VulnGuard incorporates the best elements of existing scanners and solutions on the market. At present, VulnGuard supports RegEx and [Semgrep](https://semgrep.dev) checking. Semgrep is a "fast, open-source, static analysis tool for finding bugs at editor, commit and CI time". RegEx checks allows developers to add additional rules (on top of default rulesets) to capture for more security vulnerabilities. In addition, VulnGuard incorporates dependency checking based on heuristics. This builds upon the existing work done by [SpaceRacoon](https://github.com/spaceraccoon/). The specific resources can be found under [References](#references) 
 
-**Q. How is this different from other scanners out there**
-A. VulnGuard incorporates the best elements of existing scanners and solutions on the market. etc etc. In addition, VulnGuard incorporates dependency checking based on heuristics. This builds upon the existing work done by space rac etc etc
-
-## Future
-
-In future, we unga bunga AI lmfao
+## Future Improvements
+In future, AI???????????????/
 
 ## References
 https://github.com/microsoft/DevSkim
