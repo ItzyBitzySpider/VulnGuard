@@ -421,20 +421,22 @@ async function analyzePackage(context) {
                   )
                 );
               }
-              datChecks.push(async () => {
-                const resolve = await npmRegistryCheck(
-                  moduleName,
-                  uri.fsPath
-                ).catch((reject) =>
-                  console.warn(
-                    "Unable to perform npm registry check on module",
+              datChecks.push(
+                (async () => {
+                  const resolve = await npmRegistryCheck(
                     moduleName,
-                    "due to",
-                    reject
-                  )
-                );
-                hits[moduleName].push(...resolve);
-              });
+                    uri.fsPath
+                  ).catch((reject) =>
+                    console.warn(
+                      "Unable to perform npm registry check on module",
+                      moduleName,
+                      "due to",
+                      reject
+                    )
+                  );
+                  hits[moduleName].push(...resolve);
+                })()
+              );
 
               //Taken from https://github.com/mbalabash/sdc-check
               let hasNoSourceCodeRefInHomepage =
