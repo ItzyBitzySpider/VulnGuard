@@ -6,6 +6,7 @@
   "publisher": "ItzyBitzySpider",
   "repository": "github:ItzyBitzySpider/VulnGuard",
   "license": "GPL-3.0-only",
+  "icon": "media/vulnguard-128.png",
   "engines": {
     "vscode": "^1.73.0"
   },
