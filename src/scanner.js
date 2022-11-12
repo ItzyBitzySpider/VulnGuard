@@ -2,8 +2,8 @@ const {
   getDisabledRules,
   setDisabledRules,
   getUserRulesets,
-  getCachedPackageHits,
-  setCachedPackageHits
+  //getCachedPackageHits,
+  //setCachedPackageHits
 } = require("./settings");
 const promisify = require("util").promisify;
 const execFile = require("child_process").execFile;
@@ -17,7 +17,7 @@ const Global = require("./globals");
 const vscode = require("vscode");
 const https = require("https");
 const PromisePool = require("es6-promise-pool");
-const lockfile = require('@yarnpkg/lockfile');
+//const lockfile = require('@yarnpkg/lockfile');
 
 //SEMGREP FUNCTION
 //TODO: Add interrupt functionality
@@ -240,17 +240,17 @@ function npmRegistryCheck(packageName, filePath) {
   });
 }
 
-async function loadYarnLock() { //TODO: Test if this works
+/*async function loadYarnLock() { //TODO: Test if this works
   const fileset = await vscode.workspace.findFiles("yarn.lock");
   const yarnLockPath = fileset[0].fsPath;
   return lockfile.parse(fs.readFileSync(yarnLockPath, "utf8")).object;
-}
+}*/
 
 async function analyzePackage(context) {
-  let yarnLock = await loadYarnLock(),
+  /*let yarnLock = await loadYarnLock(),
     cached = getCachedPackageHits(context),
-    cacheHits = {},
-    hits = {};
+    cacheHits = {},*/
+  let hits = {};
 
   function extListToSearch(input) {
     return (
@@ -296,11 +296,12 @@ async function analyzePackage(context) {
             const moduleName = uri.fsPath.match(
               new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
             )[1];
-            const moduleHash = moduleName + "_" + yarnLock[moduleName].version;
+            const moduleHash = moduleName;
+            /*const moduleHash = moduleName + "_" + yarnLock[moduleName].version;
             if (cached[moduleHash]) { //Skip since cached
               cacheHits[moduleHash] = true;
               return;
-            }
+            }*/
             if (!hits[moduleHash]) hits[moduleHash] = [];
             const res = await regexRuleSetsScan(
               Global.dependencyRegexRuleSets["check"],
@@ -325,11 +326,12 @@ async function analyzePackage(context) {
             const moduleName = uri.fsPath.match(
               new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
             )[1];
-            const moduleHash = moduleName + "_" + yarnLock[moduleName].version;
+            const moduleHash = moduleName;
+            /*const moduleHash = moduleName + "_" + yarnLock[moduleName].version;
             if (cached[moduleHash]) { //Skip since cached
               cacheHits[moduleHash] = true;
               return;
-            }
+            }*/
             if (!hits[moduleHash]) hits[moduleHash] = [];
             hits[moduleHash].push({
               //TODO add reference
@@ -358,11 +360,12 @@ async function analyzePackage(context) {
               const moduleName = uri.fsPath.match(
                 new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
               )[1];
-              const moduleHash = moduleName + "_" + yarnLock[moduleName].version;
+              const moduleHash = moduleName;
+              /*const moduleHash = moduleName + "_" + yarnLock[moduleName].version;
               if (cached[moduleHash]) { //Skip since cached
                 cacheHits[moduleHash] = true;
                 return;
-              }
+              }*/
               if (!hits[moduleHash]) hits[moduleHash] = [];
 
               const dat = JSON.parse(fs.readFileSync(uri.fsPath, "utf8"));
@@ -464,7 +467,7 @@ async function analyzePackage(context) {
   //   }
   // }
 
-  //All modules currently stored in hits are not cached, and have yet to be cached
+  /*//All modules currently stored in hits are not cached, and have yet to be cached
   for (const moduleHash of Object.getOwnPropertyNames(hits)) {
     cached[moduleHash] = hits[moduleHash];
   }
@@ -473,7 +476,7 @@ async function analyzePackage(context) {
   //All modules currently stored in cacheHits are currently used, but have yet to be included into hits
   for (const moduleHash of Object.getOwnPropertyNames(cacheHits)) {
     hits[moduleHash] = cached[moduleHash];
-  }
+  }*/
 
   return hits;
 }
