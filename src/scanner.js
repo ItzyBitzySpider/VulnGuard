@@ -292,7 +292,8 @@ async function analyzePackage(context) {
       "{" +
       packages
         .flatMap((packageName) =>
-          path.join("node_modules", packageName, "**", fileName)
+          //ONLY scan tier 1 fileName
+          path.join("node_modules", packageName, fileName)
         )
         .join(",")
         .replaceAll("\\", "/") +
@@ -305,7 +306,7 @@ async function analyzePackage(context) {
   const promisePool = new PromisePool(() => {
     if (!promiseArr.length) return null;
     if (promiseArr.length % 500 === 0)
-      console.log(promiseArr.length + " packages left to scan");
+      console.log(promiseArr.length + " scans left");
     const f = promiseArr.splice(-1)[0]();
     return f;
   }, MAX_THREAD);
