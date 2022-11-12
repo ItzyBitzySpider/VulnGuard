@@ -434,7 +434,7 @@ async function analyzePackage(context) {
                       reject
                     )
                   );
-                  hits[moduleName].push(...resolve);
+                  if (resolve) hits[moduleName].push(...resolve);
                 })()
               );
 
