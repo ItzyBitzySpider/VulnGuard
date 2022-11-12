@@ -19,6 +19,7 @@ const {
 } = require("./scanner");
 const scanDependencies = require("./scanDependencies");
 const { exit } = require("process");
+const fs = require("fs");
 
 //TODO file opened state independent diagnostics
 
@@ -80,9 +81,9 @@ async function activate(context) {
   );
 
   const packageJsonWatcher =
-    vscode.workspace.createFileSystemWatcher("**/package.json");
+    vscode.workspace.createFileSystemWatcher("package.json");
   const packageCodeActions = vscode.languages.registerCodeActionsProvider(
-    { language: "json", pattern: "**/package.json" },
+    { language: "json", pattern: "package.json" },
     new UnsafePackageCodeActionProvider()
   );
 
@@ -136,13 +137,29 @@ async function activate(context) {
     context.subscriptions
   );
   //onSave
+  let prevPackageJson = undefined;
   packageJsonWatcher.onDidChange(
-    (uri) => {
+    async (uri) => {
       if (uri.scheme !== "file") return;
-      scanFile(context, uri.fsPath, ["dependency"]).then(() => {
-        diagnostics.handleChange(uri.fsPath);
-        updateWebview(context);
-      });
+      try {
+        const packageJson = JSON.parse(fs.readFileSync(uri.fsPath, "utf8"));
+        if (prevPackageJson) {
+          if (
+            JSON.stringify(packageJson.dependencies) ===
+              JSON.stringify(prevPackageJson.dependencies) &&
+            JSON.stringify(packageJson.devDependencies) ===
+              JSON.stringify(prevPackageJson.devDependencies)
+          )
+            return;
+        }
+        prevPackageJson = packageJson;
+        scanFile(context, uri.fsPath, ["dependency"]).then(() => {
+          diagnostics.handleChange(uri.fsPath);
+          updateWebview(context);
+        });
+      } catch (e) {
+        console.warn(e.message);
+      }
     },
     null,
     context.subscriptions
