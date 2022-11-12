@@ -513,7 +513,7 @@ async function analyzePackage(context) {
   for (const moduleHash of Object.getOwnPropertyNames(cacheHits)) {
     hits[moduleHash] = cached[moduleHash];
   }*/
-  console.log(hits)
+  // console.log(hits)
   return hits;
 }
 
