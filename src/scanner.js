@@ -21,7 +21,7 @@ const pLimit = require("p-limit");
 
 //SEMGREP FUNCTION
 //TODO: Add interrupt functionality
-const semgrepLimit = pLimit(12);
+const semgrepLimit = pLimit(25);
 async function semgrepRuleSetsScan(configs, path, exclude = []) {
   let hits = [];
   //append --exclude-rule to semgrep command for each exclude rule
