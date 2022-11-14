@@ -85,7 +85,8 @@ async function activate(context) {
     new UnsafePackageCodeActionProvider()
   );
 
-  const watcher = vscode.workspace.createFileSystemWatcher("**/*.js");
+  const watcher =
+    vscode.workspace.createFileSystemWatcher("{**/*.js,**/*.ejs}");
   const vulnCodeActions = vscode.languages.registerCodeActionsProvider(
     { language: "javascript", scheme: "file" },
     new FixVulnCodeActionProvider()
