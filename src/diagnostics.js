@@ -33,13 +33,13 @@ function updateDiagnostics(files) {
           range: range,
           message: vuln.message,
           source: "VulnGuard",
-          code: {
-            value: toKebabCase(vuln.id),
-            target: vuln.reference
-              ? vscode.Uri.parse(vuln.reference)
-              : vuln.id,
-          },
-          ...(vuln.fix && {tags: [vuln.fix] }),
+          code: vuln.reference
+            ? {
+                value: toKebabCase(vuln.id),
+                target: vscode.Uri.parse(vuln.reference),
+              }
+            : vuln.id,
+          ...(vuln.fix && { tags: [vuln.fix] }),
         });
       });
       Global.vulnDiagnostics.set(document.uri, diagnostics);

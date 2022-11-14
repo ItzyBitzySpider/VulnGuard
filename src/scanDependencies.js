@@ -55,10 +55,12 @@ async function scanDependencies(file, context) {
         range: range,
         message: `Unsafe package "${packageName}" - ` + vuln.message,
         source: "VulnGuard",
-        code: {
-          value: toKebabCase(id),
-          target: vuln.reference ? vscode.Uri.parse(vuln.reference) : id,
-        },
+        code: vuln.reference
+          ? {
+              value: toKebabCase(id),
+              target: vscode.Uri.parse(vuln.reference),
+            }
+          : id,
       });
     });
   });
