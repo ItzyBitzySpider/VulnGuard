@@ -1,59 +1,59 @@
 rules:
-#taken from https://github.com/insidersec/insider
+  #taken from https://github.com/insidersec/insider
   - id: node-tls-reject-unauthorised
-    message: 'NODE_TLS_REJECT_UNAUTHORIZED option being disabled allows the Node.js server to accept certificates that are self-signed, allowing an attacker to bypass the TLS security layer.'
+    message: "NODE_TLS_REJECT_UNAUTHORIZED option being disabled allows the Node.js server to accept certificates that are self-signed, allowing an attacker to bypass the TLS security layer."
     severity: WARNING
     case_sensitive: false
     regex: '(?:\[|)(?:''|")NODE_TLS_REJECT_UNAUTHORIZED(?:''|")(?:\]|)\s*=\s*(?:''|")*0(?:''|")'
-    
+
   - id: ssl-verifypeer
-    message: 'The SSL_VERIFYPEER option controls the internal Node.js library, causing HTTPS requests to stop checking if a secure cryptographic tunnel has actually been established between the servers, allowing an attacker to intercept client communication in open text.'
+    message: "The SSL_VERIFYPEER option controls the internal Node.js library, causing HTTPS requests to stop checking if a secure cryptographic tunnel has actually been established between the servers, allowing an attacker to intercept client communication in open text."
     severity: WARNING
     case_sensitive: false
     regex: 'SSL_VERIFYPEER\s*:\s*0'
 
   - id: weak-hash
-    message: 'A weak cryptographic hash function is detected and should not be used. Consider using SHA512 with salts instead.'
+    message: "A weak cryptographic hash function is detected and should not be used. Consider using SHA512 with salts instead."
     severity: WARNING
     case_sensitive: false
-    regex_or: 
+    regex_or:
       - regex: 'createHash\((?:''|")md5(?:''|")'
       - regex: 'createHash\((?:''|")sha1(?:''|")'
-      - regex: '(MD2|MD4|MD5|RIPEMD|RIPEMD(128|256|160|320)|(SHA0|SHA-0|SHA1|SHA-1))'
-  
+      - regex: "(MD2|MD4|MD5|RIPEMD|RIPEMD(128|256|160|320)|(SHA0|SHA-0|SHA1|SHA-1))"
+
   #taken from https://github.com/microsoft/DevSkim
   - id: low-entropy-content-hash
-    message: 'Taking a hash of a time value is suspicious, as there is insufficient entropy to protect against brute-force attacks.'
+    message: "Taking a hash of a time value is suspicious, as there is insufficient entropy to protect against brute-force attacks."
     severity: WARNING
     case_sensitive: false
-    regex: '(MD4|MD5|(SHA(1|224|256|384|512))).*Time'
+    regex: "(MD4|MD5|(SHA(1|224|256|384|512))).*Time"
 
   - id: DES-encryption
-    message: 'DES encryption is considered insecure and should not be used.'
+    message: "DES encryption is considered unsecure and should not be used."
     severity: WARNING
     case_sensitive: false
     regex: '[''\"](?:DES(?:-(?:C(?:BC|FB[18]?)|E(?:CB|DE(?:-(?:C(?:BC|FB)|OFB))?)|OFB))?)[''\"]'
 
   - id: weak-rng
-    message: 'Weak random number generator detected. Consider using a cryptographically secure random number generator instead.'
+    message: "Weak random number generator detected. Consider using a cryptographically secure random number generator instead."
     severity: WARNING
     case_sensitive: false
     regex_or:
-      - regex: 'pseudoRandomBytes'
+      - regex: "pseudoRandomBytes"
       - regex: '\brand\('
       - regex: 'random_shuffle\('
       - regex: '\bshuffle\('
-      - regex: 'RAND_MAX'
+      - regex: "RAND_MAX"
       - regex: '\\brand\\(\\s*\\)\\s*%'
-      - regex: 'mwc1616'
-      - regex: 'System.Random'
+      - regex: "mwc1616"
+      - regex: "System.Random"
       - regex: '\bRandom\('
-      - regex: 'arc4random'
-      - regex: 'DUAL_EC_DRBG'
-      - regex: '(32969|18273)'
+      - regex: "arc4random"
+      - regex: "DUAL_EC_DRBG"
+      - regex: "(32969|18273)"
 
   - id: weak-random-seed
-    message: 'Passing a predicable value to srand() is very insecure and should be avoided.'
+    message: "Passing a predicable value to srand() is very unsecure and should be avoided."
     severity: WARNING
     case_sensitive: false
     regex_or:
@@ -61,9 +61,9 @@ rules:
       - regex: '\\bsrand\\(\\s*\\d+\\s*\\)'
 
   - id: src-implementation-weak-hash-func
-    message: 'An implementation of a weak/broken hash function was found in source code.'
+    message: "An implementation of a weak/broken hash function was found in source code."
     severity: WARNING
     case_sensitive: false
     regex_or:
-      - regex: '242070db|02441453|db702024|53144402|3572445317' #MD5
-      - regex: '98BADCFE|FEDCBC98|C3D2E1F0|F0E1D2C3' #SHA-1
+      - regex: "242070db|02441453|db702024|53144402|3572445317" #MD5
+      - regex: "98BADCFE|FEDCBC98|C3D2E1F0|F0E1D2C3" #SHA-1

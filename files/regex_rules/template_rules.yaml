@@ -1,55 +1,55 @@
 rules:
-#taken from https://github.com/ajinabraham/njsscan
+  #taken from https://github.com/ajinabraham/njsscan
   - id: handlebar-mustache-template
-    message: 'The Handlebar.js/Mustache.js template has an unescaped variable that can lead to XSS'
+    message: "The Handlebar.js/Mustache.js template has an unescaped variable that can lead to XSS"
     severity: WARNING
     case_sensitive: false
     regex: '{{{(?!.*body).+}}}|{{[ ]*&[\w]+.*}}'
 
   - id: dust-template
-    message: 'The Dust.js template has an unescaped variable that can lead to XSS'
+    message: "The Dust.js template has an unescaped variable that can lead to XSS"
     severity: WARNING
     case_sensitive: false
     regex: '{.+\|[ ]*s[ ]*}[^}]'
 
   - id: pug-jade-template
-    message: 'The Pug/Jade template has an unescaped variable that can lead to XSS'
+    message: "The Pug/Jade template has an unescaped variable that can lead to XSS"
     severity: WARNING
     case_sensitive: false
-    regex: '!{.+}'
+    regex: "!{.+}"
 
   - id: ejs-ect-template
-    message: 'The EJS/ECT template has an unescaped variable that can lead to XSS'
+    message: "The EJS/ECT template has an unescaped variable that can lead to XSS"
     severity: WARNING
     case_sensitive: false
     regex: '<%-(?![ ]*include\().*%>'
 
   - id: vue-template
-    message: 'The Vue.js template has an unescaped variable that can lead to XSS'
+    message: "The Vue.js template has an unescaped variable that can lead to XSS"
     severity: WARNING
     case_sensitive: false
     regex: 'v-html=[\''|"].+[\''|"]'
 
   - id: underscore-template
-    message: 'The Underscore.js unescape functionwith untrusted user input results can lead to XSS'
+    message: "The Underscore.js unescape functionwith untrusted user input results can lead to XSS"
     severity: WARNING
     case_sensitive: false
     regex: '_.unescape\(.+\)'
 
   - id: squirrelly-template
-    message: 'The Squirrelly.js template has an unescaped variable that can lead to XSS'
+    message: "The Squirrelly.js template has an unescaped variable that can lead to XSS"
     severity: WARNING
     case_sensitive: false
     regex: '{{.+\|.*safe.*}}'
 
   - id: electronjs-node-integration
-    message: 'The Electron.js app has nodeIntegration enabled which can lead to remote code execution if the app is vulnerable to XSS'
+    message: "The Electron.js app has nodeIntegration enabled which can lead to remote code execution if the app is vulnerable to XSS"
     severity: WARNING
     case_sensitive: false
     regex: '<webview.+nodeIntegration(?!.*=.*[''|"]false[''|"])'
-  
+
   - id: electronjs-disable-web-security
-    message: 'Disabling webSecurity will disable the same-origin policy and allows the execution of insecure code from any domain.'
+    message: "Disabling webSecurity will disable the same-origin policy and allows the execution of unsecure code from any domain."
     severity: WARNING
     case_sensitive: false
     regex: '<webview.+disablewebsecurity(?!.*=.*[''|"]false[''|"])'
