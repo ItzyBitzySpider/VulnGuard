@@ -16,11 +16,12 @@ const execFileAsync = promisify(execFile);
 const Global = require("./globals");
 const vscode = require("vscode");
 const https = require("https");
-const PromisePool = require("es6-promise-pool");
+const pLimit = require("p-limit");
 //const lockfile = require('@yarnpkg/lockfile');
 
 //SEMGREP FUNCTION
 //TODO: Add interrupt functionality
+const semgrepLimit = pLimit(12);
 async function semgrepRuleSetsScan(configs, path, exclude = []) {
   let hits = [];
   //append --exclude-rule to semgrep command for each exclude rule
@@ -29,12 +30,14 @@ async function semgrepRuleSetsScan(configs, path, exclude = []) {
       return "--exclude-rule=" + rule;
     });
   const promises = configs.map((config) => {
-    return execFileAsync("semgrep", [
-      "--json",
-      ...exclude,
-      "--config=" + config,
-      path,
-    ]);
+    return semgrepLimit(() =>
+      execFileAsync("semgrep", [
+        "--json",
+        ...exclude,
+        "--config=" + config,
+        path,
+      ])
+    );
   });
   const results = await Promise.all(promises);
   for (const result of results) {
@@ -51,7 +54,10 @@ async function semgrepRuleSetsScan(configs, path, exclude = []) {
         },
         message: result.extra.message,
         ...(result.extra.fix && { fix: result.extra.fix }),
-        ...((result.metadata && result.metadata.reference) && { reference: result.metadata.reference }),
+        ...(result.metadata &&
+          result.metadata.reference && {
+            reference: result.metadata.reference,
+          }),
         id: result.check_id,
       });
     }
@@ -197,7 +203,7 @@ function applyRegexCheck(node, parent_type, text) {
 
 //Dependency Check
 function npmRegistryCheck(packageName, filePath) {
-   return new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const data = fs.readFileSync(filePath, "utf8");
     const packageManifest = JSON.parse(data);
     const currentVersion = packageManifest.version;
@@ -237,15 +243,13 @@ function npmRegistryCheck(packageName, filePath) {
           });
         }
 
-        
         //182.5 Days (about 6 months)
         if (new Date() - currentVersionDate > 15768000) {
           result.push({
             id: "unmaintained-package",
             message:
               "Unmaintained package - Consider switching to a maintained package",
-            reference:
-              'https://github.com/mbalabash/sdc-check',
+            reference: "https://github.com/mbalabash/sdc-check",
             severity: "WARNING",
           });
         }
@@ -253,7 +257,7 @@ function npmRegistryCheck(packageName, filePath) {
         resolve(result);
       });
     });
-   });
+  });
 }
 
 /*async function loadYarnLock() { //TODO: Test if this works
@@ -317,16 +321,21 @@ async function analyzePackage(context) {
     );
   }
 
-  const MAX_THREAD = 900;
-  const promiseArr = [];
-  const promisePool = new PromisePool(() => {
-    if (!promiseArr.length) return null;
-    if (promiseArr.length % 500 === 0)
-      console.log(promiseArr.length + " scans left");
-    const f = promiseArr.splice(-1)[0]();
-    return f;
-  }, MAX_THREAD);
+  const checkPromises = [];
+  const fileReadLimit = pLimit(900);
+  let promisesFulfilled = 0;
+  function updatePromiseFulfilled() {
+    promisesFulfilled++;
+    const left = checkPromises.length - promisesFulfilled;
+    if (left % 500 === 0) console.log("Processes left to scan: " + left);
+    else if (left < 500 && left % 100 === 0)
+      console.log("Processes left to scan: " + left);
+    else if (left < 100 && left % 10 === 0)
+      console.log("Processes left to scan: " + left);
+    else if (left < 10) console.log("Processes left to scan: " + left);
+  }
 
+  console.time("Dependency Scan Time");
   const EXCLUDE_DIRS = "{node_modules/**/*.d.ts,node_modules/.bin/**}";
 
   const checkA = vscode.workspace
@@ -338,9 +347,9 @@ async function analyzePackage(context) {
       EXCLUDE_DIRS
     )
     .then((fileset) => {
-      promiseArr.push(
+      checkPromises.push(
         ...fileset.map((uri) => {
-          return async () => {
+          return fileReadLimit(async () => {
             const start = performance.now();
             const moduleName = uri.fsPath.match(
               new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
@@ -357,9 +366,10 @@ async function analyzePackage(context) {
             );
             if (res.length) hits[moduleName].push(...res);
             const duration = performance.now() - start;
+            updatePromiseFulfilled();
             if (duration > 30000)
               console.warn(`<A> scan for ${uri.fsPath} took ${duration}ms`);
-          };
+          });
         })
       );
     });
@@ -370,9 +380,9 @@ async function analyzePackage(context) {
       EXCLUDE_DIRS
     )
     .then((fileset) => {
-      promiseArr.push(
+      checkPromises.push(
         ...fileset.map((uri) => {
-          return async () => {
+          return fileReadLimit(async () => {
             const start = performance.now();
             const moduleName = uri.fsPath.match(
               new RegExp(`node_modules\\${path.sep}(.+?)\\${path.sep}`)
@@ -384,15 +394,16 @@ async function analyzePackage(context) {
             }*/
             if (!hits[moduleName]) hits[moduleName] = [];
             hits[moduleName].push({
-              reference: 'https://github.com/mbalabash/sdc-check',
+              reference: "https://github.com/mbalabash/sdc-check",
               severity: "WARNING",
               message: "Package includes OS scripts - you should verify them",
               id: "has-os-scripts",
             });
             const duration = performance.now() - start;
+            updatePromiseFulfilled();
             if (duration > 30000)
               console.warn(`<B> scan for ${uri.fsPath} took ${duration}ms`);
-          };
+          });
         })
       );
     });
@@ -400,9 +411,9 @@ async function analyzePackage(context) {
   const checkC = vscode.workspace
     .findFiles(specificFileToSearch("package.json", packagesToScan))
     .then((fileset) => {
-      promiseArr.push(
+      checkPromises.push(
         ...fileset.map((uri) => {
-          return async () => {
+          return fileReadLimit(async () => {
             try {
               const start = performance.now();
               const moduleName = uri.fsPath.match(
@@ -468,7 +479,7 @@ async function analyzePackage(context) {
                 hasNoSourceCodeRefInRepository
               ) {
                 hits[moduleName].push({
-                  reference: 'https://github.com/mbalabash/sdc-check',
+                  reference: "https://github.com/mbalabash/sdc-check",
                   severity: "WARNING",
                   message: "No source code repository found for package",
                   id: "no-source-code-repository",
@@ -481,21 +492,21 @@ async function analyzePackage(context) {
               });
 
               const duration = performance.now() - start;
+              updatePromiseFulfilled();
               if (duration > 30000)
                 console.warn(`<C> scan for ${uri.fsPath} took ${duration}ms`);
             } catch (e) {
               console.error("Error encountered for checkC", e);
             }
-          };
+          });
         })
       );
     });
 
   await Promise.all([checkA, checkB, checkC]);
-  console.time("Dependency Scan Time");
-  await promisePool.start().then(() => {
-    console.timeEnd("Dependency Scan Time");
-  });
+  console.log("Scanning...");
+  await Promise.all(checkPromises);
+  console.timeEnd("Dependency Scan Time");
 
   // const modulePaths = getTopLevelDirectories(path.join(dir, "node_modules"));
   // for (const modulePath of modulePaths) {
@@ -1001,7 +1012,7 @@ function enableRuleSet(context, path) {
 }
 
 function initDependencyScanner(context) {
-  console.log("Initializing Dependency Scanner...")
+  console.log("Initializing Dependency Scanner...");
   //Helper Functions (TODO: Cleanup and remove hacky mess)
   function loadDependencyRegexRuleSet(path, dependencyType) {
     //Wrap around function _loadRegexRuleSet() to catch exceptions thrown

@@ -50,6 +50,7 @@
   "dependencies": {
     "es6-promise-pool": "^2.5.0",
     "graceful-fs": "^4.2.10",
+    "p-limit": "3.1.0",
     "which": "^3.0.0",
     "yaml": "^2.1.3"
   }
