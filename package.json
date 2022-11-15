@@ -2,7 +2,7 @@
   "name": "vulnguard",
   "displayName": "VulnGuard",
   "description": "An extension to lint code for security vulnerabilities",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "ItzyBitzySpider",
   "repository": "github:ItzyBitzySpider/VulnGuard",
   "license": "GPL-3.0-only",
